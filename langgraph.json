@@ -1,53 +1,12 @@
 {
   "version": "1.0",
   "graphs": {
-    "initialization": {
-      "module": "workflows",
-      "function": "create_initialization_graph",
-      "description": "Graph for the initialization phase",
-      "input_type": "NovelSystemState",
-      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
-    },
-    "development": {
-      "module": "workflows",
-      "function": "create_development_graph",
-      "description": "Graph for the development phase",
-      "input_type": "NovelSystemState",
-      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
-    },
-    "creation": {
-      "module": "workflows",
-      "function": "create_creation_graph",
-      "description": "Graph for the creation phase",
-      "input_type": "NovelSystemState",
-      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
-    },
-    "refinement": {
-      "module": "workflows",
-      "function": "create_refinement_graph",
-      "description": "Graph for the refinement phase",
-      "input_type": "NovelSystemState",
-      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
-    },
-    "finalization": {
-      "module": "workflows",
-      "function": "create_finalization_graph",
-      "description": "Graph for the finalization phase",
-      "input_type": "NovelSystemState",
-      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
-    }
+    "initialization": "./workflows.py:create_initialization_graph",
+    "development": "./workflows.py:create_development_graph",
+    "creation": "./workflows.py:create_creation_graph",
+    "refinement": "./workflows.py:create_refinement_graph",
+    "finalization": "./workflows.py:create_finalization_graph"
   },
-  "dependencies": {
-    "python": [
-      "langchain-anthropic==0.3.8",
-      "langchain-openai==0.3.7",
-      "langchain-mongodb==0.5.0",
-      "langgraph==0.0.27"
-    ]
-  },
-  "runtime": {
-    "python_version": "3.10",
-    "memory_limit": "4G",
-    "timeout": 600
-  }
+  "dependencies": ["."],
+  "env": ".env"
 }
