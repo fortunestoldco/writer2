@@ -24,12 +24,23 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
         output_schema=NovelOutput
     )
     
-    workflow.add_node("executive_director", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
-    workflow.add_node("human_feedback_manager", lambda x: {"feedback": ["Initial review completed"]})
+    workflow.add_node("executive_director", 
+        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("human_feedback_manager", 
+        lambda x: {"feedback": ["Initial review completed"]})
+    workflow.add_node("quality_assessment_director", 
+        lambda x: {"feedback": ["Quality assessed"]})
+    workflow.add_node("project_timeline_manager", 
+        lambda x: {"feedback": ["Timeline updated"]})
+    workflow.add_node("market_alignment_director", 
+        lambda x: {"feedback": ["Market aligned"]})
     
     workflow.set_entry_point("executive_director")
     workflow.add_edge("executive_director", "human_feedback_manager")
-    workflow.add_edge("human_feedback_manager", END)
+    workflow.add_edge("human_feedback_manager", "quality_assessment_director")
+    workflow.add_edge("quality_assessment_director", "project_timeline_manager")
+    workflow.add_edge("project_timeline_manager", "market_alignment_director")
+    workflow.add_edge("market_alignment_director", END)
     
     return workflow
 
@@ -41,8 +52,10 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
         output_schema=NovelOutput
     )
     
-    workflow.add_node("plot_developer", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
-    workflow.add_node("character_developer", lambda x: {"feedback": ["Character development completed"]})
+    workflow.add_node("plot_developer", 
+        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("character_developer", 
+        lambda x: {"feedback": ["Character development completed"]})
     
     workflow.set_entry_point("plot_developer")
     workflow.add_edge("plot_developer", "character_developer")
@@ -58,8 +71,10 @@ def create_creation_graph(config: RunnableConfig) -> StateGraph:
         output_schema=NovelOutput
     )
     
-    workflow.add_node("content_creator", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
-    workflow.add_node("draft_reviewer", lambda x: {"feedback": ["Draft review completed"]})
+    workflow.add_node("content_creator", 
+        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("draft_reviewer", 
+        lambda x: {"feedback": ["Draft review completed"]})
     
     workflow.set_entry_point("content_creator")
     workflow.add_edge("content_creator", "draft_reviewer")
@@ -75,8 +90,10 @@ def create_refinement_graph(config: RunnableConfig) -> StateGraph:
         output_schema=NovelOutput
     )
     
-    workflow.add_node("editor", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
-    workflow.add_node("proofreader", lambda x: {"feedback": ["Proofreading completed"]})
+    workflow.add_node("editor", 
+        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("proofreader", 
+        lambda x: {"feedback": ["Proofreading completed"]})
     
     workflow.set_entry_point("editor")
     workflow.add_edge("editor", "proofreader")
@@ -92,8 +109,10 @@ def create_finalization_graph(config: RunnableConfig) -> StateGraph:
         output_schema=NovelOutput
     )
     
-    workflow.add_node("finalizer", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
-    workflow.add_node("quality_checker", lambda x: {"feedback": ["Final quality check completed"]})
+    workflow.add_node("finalizer", 
+        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("quality_checker", 
+        lambda x: {"feedback": ["Final quality check completed"]})
     
     workflow.set_entry_point("finalizer")
     workflow.add_edge("finalizer", "quality_checker")
@@ -114,7 +133,6 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
     if phase not in workflow_map:
         raise ValueError(f"Unknown phase: {phase}")
     
-    # Create RunnableConfig with project context
     config = RunnableConfig(
         callbacks=None,
         tags=[f"project_{project_id}"],
