@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "graphs": {
-    "novel_writing": "./workflows.py:create_novel_writing_workflow",
+    "storybook": "./workflows.py:create_storybook_workflow",
     "initialization": "./workflows.py:create_initialization_graph",
     "development": "./workflows.py:create_development_graph",
     "creation": "./workflows.py:create_creation_graph",

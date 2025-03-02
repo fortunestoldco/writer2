@@ -91,5 +91,17 @@ class TestWorkflows(unittest.TestCase):
         self.assertIn("differentiation_strategist", graph.nodes)
         self.assertIn("formatting_standards_expert", graph.nodes)
 
+    def test_initialization_graph(self):
+        input_data = {
+            "title": "Test Story",
+            "manuscript": "Test manuscript",
+            "model_provider": ModelProvider.ANTHROPIC,
+            "model_name": "claude-3-opus-20240229"
+        }
+        graph = create_initialization_graph(RunnableConfig())
+        result = graph.invoke(input_data)
+        assert result["model_provider"] == ModelProvider.ANTHROPIC
+        assert result["model_name"] == "claude-3-opus-20240229"
+
 if __name__ == '__main__':
     unittest.main()

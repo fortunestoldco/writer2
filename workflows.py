@@ -17,25 +17,25 @@ class ModelProvider(str, Enum):
     OLLAMA = "ollama"
     LLAMACPP = "llamacpp"
 
-class NovelInput(TypedDict):
+class StoryInput(TypedDict):
     title: str
     manuscript: str
     model_provider: ModelProvider
     model_name: str  # e.g. "gpt-4", "claude-3", "mistralai/Mistral-7B-Instruct-v0.2"
 
-class NovelOutput(TypedDict):
+class StoryOutput(TypedDict):
     title: str
     manuscript: str
     feedback: List[str]
     model_provider: ModelProvider  # Keep track of which model was used
     model_name: str
 
-class NovelState(NovelInput, NovelOutput):
+class StoryState(StoryInput, StoryOutput):
     pass
 
 # Add tracing decorator to agent functions
 @traceable(name="Executive Director Agent")
-def executive_director_agent(state: NovelState) -> Dict:
+def executive_director_agent(state: StoryState) -> Dict:
     return {
         "title": state["title"], 
         "manuscript": state["manuscript"],
@@ -47,7 +47,7 @@ def executive_director_agent(state: NovelState) -> Dict:
     }
 
 @traceable(name="Human Feedback Manager Agent")
-def human_feedback_manager_agent(state: NovelState) -> Dict:
+def human_feedback_manager_agent(state: StoryState) -> Dict:
     return {
         "feedback": ["Initial review completed"],
         "agent_type": "human_feedback_manager",
@@ -56,7 +56,7 @@ def human_feedback_manager_agent(state: NovelState) -> Dict:
 
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the initialization phase workflow graph."""
-    workflow = StateGraph(NovelState)
+    workflow = StateGraph(StoryState)
     
     # Add nodes with traced agent functions and metadata
     workflow.add_node(
@@ -96,7 +96,7 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
 
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
-    workflow = StateGraph(NovelState)
+    workflow = StateGraph(StoryState)
     
     workflow.add_node(
         "plot_developer",
@@ -119,7 +119,7 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
 
 def create_creation_graph(config: RunnableConfig) -> StateGraph:
     """Creates the creation phase workflow graph."""
-    workflow = StateGraph(NovelState)  # Fixed initialization
+    workflow = StateGraph(StoryState)  # Fixed initialization
     
     workflow.add_node("content_creator", 
         lambda x: {
@@ -140,7 +140,7 @@ def create_creation_graph(config: RunnableConfig) -> StateGraph:
 
 def create_refinement_graph(config: RunnableConfig) -> StateGraph:
     """Creates the refinement phase workflow graph."""
-    workflow = StateGraph(NovelState)  # Fixed initialization
+    workflow = StateGraph(StoryState)  # Fixed initialization
     
     workflow.add_node("editor", 
         lambda x: {
@@ -161,7 +161,7 @@ def create_refinement_graph(config: RunnableConfig) -> StateGraph:
 
 def create_finalization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the finalization phase workflow graph."""
-    workflow = StateGraph(NovelState)  # Fixed initialization
+    workflow = StateGraph(StoryState)  # Fixed initialization
     
     workflow.add_node("finalizer", 
         lambda x: {
@@ -211,7 +211,7 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
 
 def create_novel_writing_workflow(config: RunnableConfig) -> StateGraph:
     """Creates a complete novel writing workflow combining all phases."""
-    workflow = StateGraph(NovelState)
+    workflow = StateGraph(StoryState)
     
     # Add each phase as a node with detailed metadata for LangSmith visualization
     phases = {
@@ -263,3 +263,9 @@ def create_novel_writing_workflow(config: RunnableConfig) -> StateGraph:
     workflow.add_edge("finalization_phase", END)
     
     return workflow.compile()
+
+def create_storybook_workflow(config: RunnableConfig) -> StateGraph:
+    """Creates a complete storybook workflow combining all phases."""
+    workflow = StateGraph(StoryState)
+    
+    # ... rest of function remains the same ...
