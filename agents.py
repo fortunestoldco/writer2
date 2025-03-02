@@ -4,7 +4,7 @@ import logging
 
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain_aws import BedrockChat  # Changed from ChatBedrock to BedrockChat
+from langchain_aws import ChatBedrock  # Changed from ChatBedrock to BedrockChat
 from langchain_mongodb import MongoDBChatMessageHistory
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain.memory import ConversationBufferMemory
