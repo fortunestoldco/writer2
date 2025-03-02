@@ -56,7 +56,7 @@ def human_feedback_manager_agent(state: NovelState) -> Dict:
 
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the initialization phase workflow graph."""
-    workflow = StateGraph(NovelState)  # Updated initialization
+    workflow = StateGraph(NovelState)
     
     # Add nodes with traced agent functions and metadata
     workflow.add_node(
@@ -84,17 +84,9 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_node("market_alignment_director", 
         lambda x: {"feedback": ["Market aligned"]})
     
-    # Add edges with tracing metadata
-    workflow.add_edge(
-        START, 
-        "executive_director",
-        metadata={"transition": "start_to_executive"}
-    )
-    workflow.add_edge(
-        "executive_director", 
-        "human_feedback_manager",
-        metadata={"transition_type": "management_to_feedback"}
-    )
+    # Add edges without metadata
+    workflow.add_edge(START, "executive_director")
+    workflow.add_edge("executive_director", "human_feedback_manager")
     workflow.add_edge("human_feedback_manager", "quality_assessment_director")
     workflow.add_edge("quality_assessment_director", "project_timeline_manager")
     workflow.add_edge("project_timeline_manager", "market_alignment_director")
