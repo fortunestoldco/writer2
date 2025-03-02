@@ -233,6 +233,38 @@ MODEL_CONFIGS = {
         "temperature": 0.3,
         "max_tokens": 2500,
     },
+
+    # Add the following configurations for Ollama models
+    "ollama_mistral": {
+        "model": "mistral:latest",
+        "temperature": 0.2,
+        "repeat_penalty": 1.1,
+        "context_window": 8000,
+    },
+    "ollama_llama": {
+        "model": "llama2:latest", 
+        "temperature": 0.3,
+        "repeat_penalty": 1.1,
+        "context_window": 4096,
+    },
+    "ollama_vicuna": {
+        "model": "vicuna:latest",
+        "temperature": 0.3,
+        "repeat_penalty": 1.1,
+        "context_window": 8000, 
+    },
+    "ollama_codellama": {
+        "model": "codellama:latest",
+        "temperature": 0.2,
+        "repeat_penalty": 1.1,
+        "context_window": 8000,
+    },
+    "ollama_neural": {
+        "model": "neural-chat:latest",
+        "temperature": 0.3,
+        "repeat_penalty": 1.1,
+        "context_window": 8000,
+    },
 }
 
 # MongoDB configuration
@@ -254,6 +286,12 @@ SERVER_CONFIG = {
     "port": 8000,
     "debug": False,
     "workers": 4,
+}
+
+# Add Ollama host configuration
+OLLAMA_CONFIG = {
+    "host": "http://localhost:11434",
+    "timeout": 120,
 }
 
 # Phase thresholds and quality gates
@@ -1224,4 +1262,6 @@ PROMPT_TEMPLATES = {
     - Elements that may have lasting versus temporary appeal
     - Strategic balance between trend alignment and timelessness
 
-    Respond in a structured JSON format with
+    Respond in a structured JSON format with comprehensive trend forecasting.
+    """
+}

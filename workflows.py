@@ -1,8 +1,8 @@
-from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast
+from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast, Union
 import json
 
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.mongo import MongoDBCheckpointHandler
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 from config import MONGODB_CONFIG, QUALITY_GATES
 from state import NovelSystemState
@@ -10,6 +10,12 @@ from mongodb import MongoDBManager
 from agents import AgentFactory
 from utils import check_quality_gate
 
+class NovelGraphState(TypedDict):
+    project: Dict[str, Any]
+    current_input: Dict[str, Any]
+    current_output: Dict[str, Any]
+    messages: List[Dict[str, Any]]
+    errors: List[Dict[str, Any]]
 
 def create_initialization_graph(project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Create the workflow graph for the initialization phase.
@@ -40,7 +46,7 @@ def create_initialization_graph(project_id: str, agent_factory: AgentFactory) ->
         workflow.add_node("market_alignment_director", market_alignment_director)
         
         # Define conditional routing
-        def route_after_executive_director(state: NovelSystemState) -> str:
+        def route_after_executive_director(state: NovelGraphState) -> str:
             """Route after the executive director node.
             
             Args:
@@ -80,14 +86,10 @@ def create_initialization_graph(project_id: str, agent_factory: AgentFactory) ->
         # Set the entry point
         workflow.set_entry_point("executive_director")
         
-        # Set up checkpointing with MongoDB
-        checkpointer = MongoDBCheckpointHandler(
-            connection_string=MONGODB_CONFIG["connection_string"],
-            database_name=MONGODB_CONFIG["database_name"],
-            collection_name=f"checkpoint_initialization_{project_id}"
-        )
-        
-        workflow.set_checkpoint(checkpointer)
+        # Compile the graph with MongoDB checkpointer
+        mongodb_uri = MONGODB_CONFIG["connection_string"]
+        with MongoDBSaver.from_conn_string(mongodb_uri) as checkpointer:
+            workflow = workflow.compile(checkpointer=checkpointer)
         
         return workflow
     except Exception as e:
@@ -95,15 +97,7 @@ def create_initialization_graph(project_id: str, agent_factory: AgentFactory) ->
 
 
 def create_development_graph(project_id: str, agent_factory: AgentFactory) -> StateGraph:
-    """Create the workflow graph for the development phase.
-    
-    Args:
-        project_id: ID of the project.
-        agent_factory: Factory for creating agents.
-        
-    Returns:
-        A StateGraph for the development phase.
-    """
+    """Create the workflow graph for the development phase."""
     try:
         # Create agent nodes for the development phase
         executive_director = agent_factory.create_agent("executive_director", project_id)
@@ -119,10 +113,10 @@ def create_development_graph(project_id: str, agent_factory: AgentFactory) -> St
         market_alignment_director = agent_factory.create_agent("market_alignment_director", project_id)
         reader_attachment_specialist = agent_factory.create_agent("reader_attachment_specialist", project_id)
         scene_emotion_calibrator = agent_factory.create_agent("scene_emotion_calibrator", project_id)
-        
+
         # Define the state graph
         workflow = StateGraph(NovelSystemState)
-        
+
         # Add nodes
         workflow.add_node("executive_director", executive_director)
         workflow.add_node("creative_director", creative_director)
@@ -137,7 +131,7 @@ def create_development_graph(project_id: str, agent_factory: AgentFactory) -> St
         workflow.add_node("market_alignment_director", market_alignment_director)
         workflow.add_node("reader_attachment_specialist", reader_attachment_specialist)
         workflow.add_node("scene_emotion_calibrator", scene_emotion_calibrator)
-        
+
         # Define conditional routing
         def route_after_executive_director(state: NovelSystemState) -> str:
             """Route after the executive director node.
@@ -192,11 +186,7 @@ def create_development_graph(project_id: str, agent_factory: AgentFactory) -> St
                 return "character_relationship_mapper"
             elif "world" in task.lower() or "setting" in task.lower():
                 return "world_building_expert"
-            else:
-                # Default back to executive director
-                return "executive_director"
         
-        # Set up the edges
         workflow.add_edge("executive_director", route_after_executive_director)
         workflow.add_edge("creative_director", route_after_creative_director)
         workflow.add_edge("structure_architect", "creative_director")
@@ -214,20 +204,15 @@ def create_development_graph(project_id: str, agent_factory: AgentFactory) -> St
         # Set the entry point
         workflow.set_entry_point("executive_director")
         
-        # Set up checkpointing with MongoDB
-        checkpointer = MongoDBCheckpointHandler(
-            connection_string=MONGODB_CONFIG["connection_string"],
-            database_name=MONGODB_CONFIG["database_name"],
-            collection_name=f"checkpoint_development_{project_id}"
-        )
-        
-        workflow.set_checkpoint(checkpointer)
+        # Compile the graph with MongoDB checkpointer
+        mongodb_uri = MONGODB_CONFIG["connection_string"]
+        with MongoDBSaver.from_conn_string(mongodb_uri) as checkpointer:
+            workflow = workflow.compile(checkpointer=checkpointer)
         
         return workflow
     except Exception as e:
         raise RuntimeError(f"Error creating development graph: {e}")
-
-
+        
 def create_creation_graph(project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Create the workflow graph for the creation phase.
     
@@ -294,7 +279,7 @@ def create_creation_graph(project_id: str, agent_factory: AgentFactory) -> State
                 else:
                     # Default to content development director
                     return "content_development_director"
-        
+                
         def route_after_content_director(state: NovelSystemState) -> str:
             """Route after the content development director node.
             
@@ -323,7 +308,7 @@ def create_creation_graph(project_id: str, agent_factory: AgentFactory) -> State
             else:
                 # Default back to executive director
                 return "executive_director"
-        
+                
         def route_after_creative_director(state: NovelSystemState) -> str:
             """Route after the creative director node.
             
@@ -340,7 +325,7 @@ def create_creation_graph(project_id: str, agent_factory: AgentFactory) -> State
             else:
                 # Default back to content development director
                 return "content_development_director"
-        
+            
         # Set up the edges
         workflow.add_edge("executive_director", route_after_executive_director)
         workflow.add_edge("content_development_director", route_after_content_director)
@@ -357,20 +342,15 @@ def create_creation_graph(project_id: str, agent_factory: AgentFactory) -> State
         # Set the entry point
         workflow.set_entry_point("executive_director")
         
-        # Set up checkpointing with MongoDB
-        checkpointer = MongoDBCheckpointHandler(
-            connection_string=MONGODB_CONFIG["connection_string"],
-            database_name=MONGODB_CONFIG["database_name"],
-            collection_name=f"checkpoint_creation_{project_id}"
-        )
-        
-        workflow.set_checkpoint(checkpointer)
+        # Compile the graph with MongoDB checkpointer
+        mongodb_uri = MONGODB_CONFIG["connection_string"]
+        with MongoDBSaver.from_conn_string(mongodb_uri) as checkpointer:
+            workflow = workflow.compile(checkpointer=checkpointer)
         
         return workflow
     except Exception as e:
         raise RuntimeError(f"Error creating creation graph: {e}")
-
-
+        
 def create_refinement_graph(project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Create the workflow graph for the refinement phase.
     
@@ -443,7 +423,7 @@ def create_refinement_graph(project_id: str, agent_factory: AgentFactory) -> Sta
                 else:
                     # Default to editorial director
                     return "editorial_director"
-        
+                
         def route_after_editorial_director(state: NovelSystemState) -> str:
             """Route after the editorial director node.
             
@@ -455,7 +435,7 @@ def create_refinement_graph(project_id: str, agent_factory: AgentFactory) -> Sta
             """
             task = state["current_input"].get("task", "")
             editing_type = state["current_input"].get("editing_type", "").lower()
-            
+                
             if editing_type == "developmental" or "structure" in task.lower():
                 return "structural_editor"
             elif editing_type == "developmental" or "character" in task.lower():
@@ -477,7 +457,7 @@ def create_refinement_graph(project_id: str, agent_factory: AgentFactory) -> Sta
             else:
                 # Default back to executive director
                 return "executive_director"
-        
+                
         # Set up the edges
         workflow.add_edge("executive_director", route_after_executive_director)
         workflow.add_edge("editorial_director", route_after_editorial_director)
@@ -496,20 +476,15 @@ def create_refinement_graph(project_id: str, agent_factory: AgentFactory) -> Sta
         # Set the entry point
         workflow.set_entry_point("executive_director")
         
-        # Set up checkpointing with MongoDB
-        checkpointer = MongoDBCheckpointHandler(
-            connection_string=MONGODB_CONFIG["connection_string"],
-            database_name=MONGODB_CONFIG["database_name"],
-            collection_name=f"checkpoint_refinement_{project_id}"
-        )
-        
-        workflow.set_checkpoint(checkpointer)
+        # Compile the graph with MongoDB checkpointer
+        mongodb_uri = MONGODB_CONFIG["connection_string"]
+        with MongoDBSaver.from_conn_string(mongodb_uri) as checkpointer:
+            workflow = workflow.compile(checkpointer=checkpointer)
         
         return workflow
     except Exception as e:
         raise RuntimeError(f"Error creating refinement graph: {e}")
-
-
+        
 def create_finalization_graph(project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Create the workflow graph for the finalization phase.
     
@@ -568,7 +543,7 @@ def create_finalization_graph(project_id: str, agent_factory: AgentFactory) -> S
                 else:
                     # Default to market alignment director
                     return "market_alignment_director"
-        
+                
         def route_after_market_director(state: NovelSystemState) -> str:
             """Route after the market alignment director node.
             
@@ -589,7 +564,7 @@ def create_finalization_graph(project_id: str, agent_factory: AgentFactory) -> S
             else:
                 # Default back to executive director
                 return "executive_director"
-        
+                
         def route_after_editorial_director(state: NovelSystemState) -> str:
             """Route after the editorial director node.
             
@@ -606,7 +581,7 @@ def create_finalization_graph(project_id: str, agent_factory: AgentFactory) -> S
             else:
                 # Default back to executive director
                 return "executive_director"
-        
+            
         # Set up the edges
         workflow.add_edge("executive_director", route_after_executive_director)
         workflow.add_edge("market_alignment_director", route_after_market_director)
@@ -619,14 +594,10 @@ def create_finalization_graph(project_id: str, agent_factory: AgentFactory) -> S
         # Set the entry point
         workflow.set_entry_point("executive_director")
         
-        # Set up checkpointing with MongoDB
-        checkpointer = MongoDBCheckpointHandler(
-            connection_string=MONGODB_CONFIG["connection_string"],
-            database_name=MONGODB_CONFIG["database_name"],
-            collection_name=f"checkpoint_finalization_{project_id}"
-        )
-        
-        workflow.set_checkpoint(checkpointer)
+        # Compile the graph with MongoDB checkpointer
+        mongodb_uri = MONGODB_CONFIG["connection_string"]
+        with MongoDBSaver.from_conn_string(mongodb_uri) as checkpointer:
+            workflow = workflow.compile(checkpointer=checkpointer)
         
         return workflow
     except Exception as e:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from typing import Any, Dict, List, Optional
 from pymongo import MongoClient
@@ -8,7 +9,9 @@ from config import MONGODB_CONFIG
 
 
 class MongoDBManager:
-    """Manager for MongoDB operations."""
+    """
+    Manager for MongoDB operations.
+    """
     
     def __init__(self, connection_string: Optional[str] = None):
         """Initialize the MongoDB manager.

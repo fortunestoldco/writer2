@@ -15,6 +15,7 @@ class TestWorkflows(unittest.TestCase):
     @patch('mongodb.MongoClient')
     def setUp(self, MockMongoClient):
         self.mock_client = MockMongoClient.return_value
+        MONGODB_CONFIG = {"database_name": "test_db"}
         self.mock_db = self.mock_client[MONGODB_CONFIG["database_name"]]
         self.mongo_manager = MongoDBManager()
         self.agent_factory = AgentFactory(self.mongo_manager)

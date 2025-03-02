@@ -1,18 +1,21 @@
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, Union
 import json
 import logging
 
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain_aws import ChatBedrock
+from langchain_aws import BedrockChat  # Changed from ChatBedrock to BedrockChat
 from langchain_mongodb import MongoDBChatMessageHistory
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain.agents import AgentExecutor, ConversationalAgent
 from langchain.chains import LLMChain
+from langchain.schema import BaseMessage
+from langchain_ollama import ChatOllama
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import Graph, StateGraph, END
 from langgraph.checkpoint.mongodb import MongoDBCheckpointHandler
+from langgraph.prebuilt import ToolExecutor
 
 from config import MODEL_CONFIGS, PROMPT_TEMPLATES, MONGODB_CONFIG
 from state import NovelSystemState
@@ -62,68 +65,39 @@ class AgentFactory:
                         "max_tokens": config.get("max_tokens", 2000)
                     }
                 )
-            elif model_name.startswith("google/"):
-                clean_model_name = model_name.replace("google/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
+            elif model_name.startswith("huggingface/"):
+                if "endpoint" in model_name.lower():
+                    return HuggingFaceEndpoint(
+                        endpoint_url=config.get("endpoint_url"),
+                        task=config.get("task", "text-generation"),
+                        model_kwargs={
+                            "temperature": config.get("temperature", 0.3),
+                            "max_tokens": config.get("max_tokens", 2000)
+                        }
+                    )
+                else:
+                    return ChatHuggingFace(
+                        model_id=model_name.replace("huggingface/", ""),
+                        task=config.get("task", "text-generation"),
+                        temperature=config.get("temperature", 0.3),
+                        max_tokens=config.get("max_tokens", 2000)
+                    )
+            elif model_name.startswith("replicate/"):
+                model_version = config.get("model_version", "")
+                return Replicate(
+                    model=f"{model_name.replace('replicate/', '')}:{model_version}",
                     model_kwargs={
                         "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
+                        "max_length": config.get("max_tokens", 2000)
                     }
                 )
-            elif model_name.startswith("mistralai/"):
-                clean_model_name = model_name.replace("mistralai/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
-                )
-            elif model_name.startswith("microsoft/"):
-                clean_model_name = model_name.replace("microsoft/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
-                )
-            elif model_name.startswith("databricks/"):
-                clean_model_name = model_name.replace("databricks/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
-                )
-            elif model_name.startswith("Qwen/"):
-                clean_model_name = model_name.replace("Qwen/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
-                )
-            elif model_name.startswith("NousResearch/"):
-                clean_model_name = model_name.replace("NousResearch/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
-                )
-            elif model_name.startswith("Salesforce/"):
-                clean_model_name = model_name.replace("Salesforce/", "")
-                return BedrockChat(
-                    model_id=clean_model_name,
-                    model_kwargs={
-                        "temperature": config.get("temperature", 0.3),
-                        "max_tokens": config.get("max_tokens", 2000)
-                    }
+            elif model_name.startswith("ollama/"):
+                return ChatOllama(
+                    model=model_name.replace("ollama/", ""),
+                    temperature=config.get("temperature", 0.3),
+                    repeat_penalty=config.get("repeat_penalty", 1.1),
+                    base_url=OLLAMA_CONFIG["host"],
+                    timeout=OLLAMA_CONFIG["timeout"]
                 )
             else:
                 # Default to OpenAI
@@ -203,7 +177,7 @@ class AgentFactory:
             logger.error(f"Error getting prompt template for agent {agent_name}: {e}")
             raise
     
-    def create_agent(self, agent_name: str, project_id: str) -> Callable:
+    def create_agent(self, agent_name: str, project_id: str) -> Callable[[NovelSystemState], Dict]:
         """Create an agent function for use in the graph.
         
         Args:
@@ -211,7 +185,7 @@ class AgentFactory:
             project_id: ID of the project.
             
         Returns:
-            A callable agent function.
+            A callable agent function that takes NovelSystemState and returns Dict.
         """
         try:
             llm = self._get_llm(agent_name)
@@ -253,7 +227,7 @@ class AgentFactory:
                         "timestamp": current_timestamp()
                     }
                     
-                    # Add to messages
+                    # Add to message history
                     state["messages"].append({
                         "role": agent_name,
                         "content": response,
