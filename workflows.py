@@ -1,12 +1,13 @@
 from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast, Union
 import json
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 from langchain.schema.runnable import RunnableConfig
 
 from state import NovelSystemState
 from agents import AgentFactory
 
+# Define input, output, and overall state schemas
 class NovelInput(TypedDict):
     title: str
     manuscript: str
@@ -16,12 +17,15 @@ class NovelOutput(TypedDict):
     manuscript: str
     feedback: List[str]
 
+class NovelState(NovelInput, NovelOutput):
+    pass
+
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the initialization phase workflow graph."""
     workflow = StateGraph(
-        state_schema=NovelInput,
-        input_schema=NovelInput,
-        output_schema=NovelOutput
+        NovelState,
+        input=NovelInput,
+        output=NovelOutput
     )
     
     workflow.add_node("executive_director", 
@@ -35,7 +39,7 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_node("market_alignment_director", 
         lambda x: {"feedback": ["Market aligned"]})
     
-    workflow.set_entry_point("executive_director")
+    workflow.add_edge(START, "executive_director")
     workflow.add_edge("executive_director", "human_feedback_manager")
     workflow.add_edge("human_feedback_manager", "quality_assessment_director")
     workflow.add_edge("quality_assessment_director", "project_timeline_manager")
@@ -47,9 +51,9 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
     workflow = StateGraph(
-        state_schema=NovelInput,
-        input_schema=NovelInput,
-        output_schema=NovelOutput
+        NovelState,
+        input=NovelInput,
+        output=NovelOutput
     )
     
     workflow.add_node("plot_developer", 
@@ -57,11 +61,11 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_node("character_developer", 
         lambda x: {"feedback": ["Character development completed"]})
     
-    workflow.set_entry_point("plot_developer")
+    workflow.add_edge(START, "plot_developer")
     workflow.add_edge("plot_developer", "character_developer")
     workflow.add_edge("character_developer", END)
     
-    return workflow
+    return workflow.compile()
 
 def create_creation_graph(config: RunnableConfig) -> StateGraph:
     """Creates the creation phase workflow graph."""
