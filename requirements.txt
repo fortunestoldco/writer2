@@ -1,0 +1,11 @@
+fastapi==0.103.1
+uvicorn==0.23.2
+pydantic==2.3.0
+pymongo==4.5.0
+langchain==0.0.271
+langchain-anthropic==0.0.3
+langchain-openai==0.0.2
+langchain-aws==0.0.2
+langchain-mongodb==0.1.1
+langgraph==0.0.18
+
