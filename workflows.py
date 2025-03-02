@@ -1,7 +1,7 @@
 from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast, Union
 from enum import Enum
 from langgraph.graph import StateGraph, START, END
-from langchain.schema.runnable import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langsmith.run_helpers import traceable
 from langsmith import RunTree
 
@@ -55,7 +55,7 @@ def human_feedback_manager_agent(state: StoryState) -> Dict:
     }
 
 from typing import Dict, Any
-from langchain.schema.runnable import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
 from state import StoryState
 from agents import (

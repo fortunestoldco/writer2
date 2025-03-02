@@ -3,21 +3,28 @@ from typing import Dict, List, Optional, Any, Callable, Union
 import json
 import logging
 
+# Chat models
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain_aws import ChatBedrock 
-from langchain_mongodb import MongoDBChatMessageHistory
-from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from langchain.memory import ConversationBufferMemory
-from langchain.agents import AgentExecutor, ConversationalAgent
-from langchain.chains import LLMChain
-from langchain.schema import BaseMessage
+from langchain_aws.chat_models import ChatBedrock
 from langchain_ollama import ChatOllama
 
-from langchain.agents import Tool
-from langchain.tools.base import BaseTool
-from langchain.schema import SystemMessage
-from langchain.prompts import ChatPromptTemplate
+# Core components
+from langchain_core.prompts import (
+    PromptTemplate, 
+    ChatPromptTemplate, 
+    HumanMessagePromptTemplate, 
+    SystemMessagePromptTemplate
+)
+from langchain_core.memory import ConversationBufferMemory
+from langchain_core.agents import AgentExecutor, ConversationalAgent, Tool
+from langchain_core.tools import BaseTool
+from langchain_core.chains import LLMChain
+from langchain_core.messages import BaseMessage, SystemMessage
+
+# Database
+from langchain_mongodb import MongoDBChatMessageHistory
+
 from langgraph.graph import StateGraph
 from langgraph.graph.state import State
 
