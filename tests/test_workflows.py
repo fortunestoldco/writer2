@@ -15,6 +15,24 @@ from agents import AgentFactory
 from mongodb import MongoDBManager
 from test_helpers import create_test_story_input, create_test_config
 import pytest
+from typing import Dict, Any
+
+@pytest.fixture
+def test_input() -> Dict[str, Any]:
+    return {
+        "title": "Test Story",
+        "manuscript": "Test content",
+        "model_provider": "anthropic",
+        "model_name": "claude-3-opus-20240229"
+    }
+
+@pytest.fixture
+def agent_factory(mongodb_manager):
+    return AgentFactory(mongodb_manager)
+
+@pytest.fixture
+def config(agent_factory):
+    return {"metadata": {"agent_factory": agent_factory}}
 
 class TestWorkflows(unittest.TestCase):
 
@@ -141,9 +159,8 @@ class TestWorkflows(unittest.TestCase):
         self.assertEqual(result["title"], self.test_input["title"])
         self.assertEqual(result["model_provider"], self.test_input["model_provider"])
 
-def test_initialization_graph(test_input, agent_factory):
+def test_initialization_graph(test_input, config):
     """Test initialization phase workflow."""
-    config = {"metadata": {"agent_factory": agent_factory}}
     graph = create_initialization_graph(config)
     result = graph.invoke(test_input)
     
@@ -151,5 +168,43 @@ def test_initialization_graph(test_input, agent_factory):
     assert "feedback" in result
     assert "executive_director" in result["phase_history"]
 
-if __name__ >= '__main__':
-    pytest.main([__file__])
+def test_storybook_workflow(test_input, config):
+    """Test the complete storybook workflow."""
+    workflow = create_storybook_workflow(config)
+    result = workflow.invoke(test_input)
+    
+    assert result["title"] == test_input["title"]
+    assert result["model_provider"] == test_input["model_provider"]
+    assert "feedback" in result
+    
+    # Verify phase completion
+    assert "initialization_complete" in result
+    assert "development_complete" in result
+    assert "creation_complete" in result
+    assert "refinement_complete" in result
+    assert "finalization_complete" in result
+    
+    # Verify quality metrics
+    assert "quality_score" in result
+    assert 0.0 <= result["quality_score"] <= 1.0
+
+def test_workflow_graph_structure(config):
+    """Test the structure of workflow graphs."""
+    init_graph = create_initialization_graph(config)
+    dev_graph = create_development_graph(config)
+    create_graph = create_creation_graph(config)
+    refine_graph = create_refinement_graph(config)
+    final_graph = create_finalization_graph(config)
+    
+    # Test initialization graph structure
+    assert "executive_director" in init_graph.nodes
+    assert "human_feedback_manager" in init_graph.nodes
+    assert "quality_assessment_director" in init_graph.nodes
+    
+    # Test development graph structure
+    assert "creative_director" in dev_graph.nodes
+    assert "structure_architect" in dev_graph.nodes
+    assert "plot_development_specialist" in dev_graph.nodes
+
+if __name__ == '__main__':
+    pytest.main(['-v', __file__])

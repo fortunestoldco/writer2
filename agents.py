@@ -14,8 +14,14 @@ from langchain.chains import LLMChain
 from langchain.schema import BaseMessage
 from langchain_ollama import ChatOllama
 
+from langchain.agents import Tool
+from langchain.tools.base import BaseTool
+from langchain.schema import SystemMessage
+from langchain.prompts import ChatPromptTemplate
+from langgraph.graph import StateGraph
+from langgraph.graph.state import State
+
 from langgraph.graph import Graph, StateGraph, END
-from langgraph.prebuilt import ToolExecutor
 from langgraph_sdk.client import SyncAssistantsClient
 
 from config import MODEL_CONFIGS, PROMPT_TEMPLATES, MONGODB_CONFIG, OLLAMA_CONFIG
@@ -286,3 +292,25 @@ class AgentFactory:
         except Exception as e:
             logger.error(f"Error getting prompt template for agent {agent_name}: {e}")
             raise
+
+# Replace ToolExecutor with our own implementation
+class ToolExecutor:
+    """Simple tool executor implementation"""
+    def __init__(self, tools: List[BaseTool]):
+        self.tools = {tool.name: tool for tool in tools}
+    
+    def invoke(self, tool_name: str, tool_input: Any) -> Any:
+        if tool_name not in self.tools:
+            raise ValueError(f"Tool {tool_name} not found")
+        return self.tools[tool_name].run(tool_input)
+
+class AgentState:
+    """Represents the state of an agent in the workflow."""
+    def __init__(self, **kwargs):
+        self.data = kwargs
+    
+    def __getitem__(self, key):
+        return self.data.get(key)
+    
+    def __setitem__(self, key, value):
+        self.data[key] = value
