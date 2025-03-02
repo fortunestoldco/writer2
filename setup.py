@@ -18,6 +18,7 @@ setup(
         "python-dotenv>=1.0.1",
         "requests>=2.31.0",
         "httpx>=0.26.0"
+        "Pyjnius"
     ],
     python_requires=">=3.10",
 )
