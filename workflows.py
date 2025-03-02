@@ -3,7 +3,7 @@ from enum import Enum
 from langgraph.graph import StateGraph, START, END
 from langchain.schema.runnable import RunnableConfig
 from langsmith.run_helpers import traceable
-from langchain.callbacks import TraceableCallbackHandler
+from langsmith import RunTree
 
 from state import NovelSystemState
 from agents import AgentFactory
@@ -56,11 +56,7 @@ def human_feedback_manager_agent(state: NovelState) -> Dict:
 
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the initialization phase workflow graph."""
-    workflow = StateGraph(
-        NovelState,
-        input=NovelInput,
-        output=NovelOutput
-    )
+    workflow = StateGraph(NovelState)  # Updated initialization
     
     # Add nodes with traced agent functions and metadata
     workflow.add_node(
@@ -88,11 +84,11 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_node("market_alignment_director", 
         lambda x: {"feedback": ["Market aligned"]})
     
-    # Add edges with metadata
+    # Add edges with tracing metadata
     workflow.add_edge(
         START, 
         "executive_director",
-        metadata={"transition_type": "start"}
+        metadata={"transition": "start_to_executive"}
     )
     workflow.add_edge(
         "executive_director", 
@@ -108,7 +104,7 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
 
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
-    workflow = StateGraph(NovelState)  # Corrected initialization
+    workflow = StateGraph(NovelState)
     
     workflow.add_node(
         "plot_developer",
@@ -199,9 +195,10 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
     if phase not in workflow_map:
         raise ValueError(f"Unknown phase: {phase}")
     
-    # Add tracing callbacks
+    # Configure tracing with RunTree
     config = RunnableConfig(
-        callbacks=[TraceableCallbackHandler()],
+        run_name=f"{phase}_phase",
+        callbacks=None,  # LangSmith tracing is handled via env vars
         tags=[f"project_{project_id}", f"phase_{phase}"],
         metadata={
             "project_id": project_id,
