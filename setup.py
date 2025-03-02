@@ -13,9 +13,9 @@ setup(
         "langchain_openai>=0.3.7",
         "langchain_ollama>=0.0.1",
         "langgraph>=0.0.20",
+        "langsmith>=0.0.30",
         "httpx>=0.26.0",
         "Pyjnius",
-        # ...other dependencies...
     ],
     python_requires=">=3.10",
 )
