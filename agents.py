@@ -4,7 +4,7 @@ import logging
 
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain_aws import BedrockChat
+from langchain_aws import ChatBedrock
 from langchain_mongodb import MongoDBChatMessageHistory
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain.memory import ConversationBufferMemory
@@ -12,7 +12,7 @@ from langchain.agents import AgentExecutor, ConversationalAgent
 from langchain.chains import LLMChain
 
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.mongo import MongoDBCheckpointHandler
+from langgraph.checkpoint.mongodb import MongoDBCheckpointHandler
 
 from config import MODEL_CONFIGS, PROMPT_TEMPLATES, MONGODB_CONFIG
 from state import NovelSystemState
