@@ -1,7 +1,5 @@
 from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast, Union
-import json
 from enum import Enum
-
 from langgraph.graph import StateGraph, START, END
 from langchain.schema.runnable import RunnableConfig
 from langsmith.run_helpers import traceable
@@ -110,14 +108,18 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
 
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
-    workflow = StateGraph(
-        NovelState,
-        input=NovelInput,
-        output=NovelOutput
-    )
+    workflow = StateGraph(NovelState)  # Corrected initialization
     
-    workflow.add_node("plot_developer", 
-        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node(
+        "plot_developer",
+        lambda x: {
+            "title": x["title"],
+            "manuscript": x["manuscript"],
+            "model_provider": x["model_provider"],
+            "model_name": x["model_name"],
+            "feedback": []
+        }
+    )
     workflow.add_node("character_developer", 
         lambda x: {"feedback": ["Character development completed"]})
     
