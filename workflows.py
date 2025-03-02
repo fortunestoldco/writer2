@@ -206,3 +206,60 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
     )
     
     return workflow_map[phase](config)
+
+# Add this after your existing graph functions
+
+def create_novel_writing_workflow(config: RunnableConfig) -> StateGraph:
+    """Creates a complete novel writing workflow combining all phases."""
+    workflow = StateGraph(NovelState)
+    
+    # Add each phase as a node with detailed metadata for LangSmith visualization
+    phases = {
+        "initialization": {
+            "description": "Initial project setup and planning",
+            "team": "management"
+        },
+        "development": {
+            "description": "Story and character development",
+            "team": "creative"
+        },
+        "creation": {
+            "description": "Content creation and drafting",
+            "team": "writing"
+        },
+        "refinement": {
+            "description": "Editing and refinement",
+            "team": "editing"
+        },
+        "finalization": {
+            "description": "Final review and polishing",
+            "team": "quality"
+        }
+    }
+    
+    # Add each phase with its metadata
+    for phase_name, phase_info in phases.items():
+        workflow.add_node(
+            f"{phase_name}_phase",
+            get_phase_workflow(
+                phase_name, 
+                config.metadata.get("project_id", "default"),
+                config.metadata.get("agent_factory")
+            ),
+            metadata={
+                "description": phase_info["description"],
+                "team": phase_info["team"],
+                "phase": phase_name,
+                "project_id": config.metadata.get("project_id", "default")
+            }
+        )
+    
+    # Connect phases sequentially
+    workflow.add_edge(START, "initialization_phase")
+    workflow.add_edge("initialization_phase", "development_phase")
+    workflow.add_edge("development_phase", "creation_phase")
+    workflow.add_edge("creation_phase", "refinement_phase")
+    workflow.add_edge("refinement_phase", "finalization_phase")
+    workflow.add_edge("finalization_phase", END)
+    
+    return workflow.compile()
