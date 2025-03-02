@@ -4,6 +4,8 @@ from enum import Enum
 
 from langgraph.graph import StateGraph, START, END
 from langchain.schema.runnable import RunnableConfig
+from langsmith.run_helpers import traceable
+from langchain.callbacks import TraceableCallbackHandler
 
 from state import NovelSystemState
 from agents import AgentFactory
@@ -33,6 +35,27 @@ class NovelOutput(TypedDict):
 class NovelState(NovelInput, NovelOutput):
     pass
 
+# Add tracing decorator to agent functions
+@traceable(name="Executive Director Agent")
+def executive_director_agent(state: NovelState) -> Dict:
+    return {
+        "title": state["title"], 
+        "manuscript": state["manuscript"],
+        "model_provider": state["model_provider"],
+        "model_name": state["model_name"],
+        "feedback": [],
+        "agent_type": "executive_director",
+        "agent_model": state["model_name"]
+    }
+
+@traceable(name="Human Feedback Manager Agent")
+def human_feedback_manager_agent(state: NovelState) -> Dict:
+    return {
+        "feedback": ["Initial review completed"],
+        "agent_type": "human_feedback_manager",
+        "agent_model": state["model_name"]
+    }
+
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the initialization phase workflow graph."""
     workflow = StateGraph(
@@ -41,16 +64,25 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
         output=NovelOutput
     )
     
-    workflow.add_node("executive_director", 
-        lambda x: {
-            "title": x["title"], 
-            "manuscript": x["manuscript"],
-            "model_provider": x["model_provider"],
-            "model_name": x["model_name"],
-            "feedback": []
-        })
-    workflow.add_node("human_feedback_manager", 
-        lambda x: {"feedback": ["Initial review completed"]})
+    # Add nodes with traced agent functions and metadata
+    workflow.add_node(
+        "executive_director", 
+        executive_director_agent,
+        metadata={
+            "description": "Executive oversight and initial planning",
+            "agent_type": "executive_director",
+            "team": "management"
+        }
+    )
+    workflow.add_node(
+        "human_feedback_manager", 
+        human_feedback_manager_agent,
+        metadata={
+            "description": "Manages human feedback integration",
+            "agent_type": "human_feedback_manager",
+            "team": "feedback"
+        }
+    )
     workflow.add_node("quality_assessment_director", 
         lambda x: {"feedback": ["Quality assessed"]})
     workflow.add_node("project_timeline_manager", 
@@ -58,8 +90,17 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_node("market_alignment_director", 
         lambda x: {"feedback": ["Market aligned"]})
     
-    workflow.add_edge(START, "executive_director")
-    workflow.add_edge("executive_director", "human_feedback_manager")
+    # Add edges with metadata
+    workflow.add_edge(
+        START, 
+        "executive_director",
+        metadata={"transition_type": "start"}
+    )
+    workflow.add_edge(
+        "executive_director", 
+        "human_feedback_manager",
+        metadata={"transition_type": "management_to_feedback"}
+    )
     workflow.add_edge("human_feedback_manager", "quality_assessment_director")
     workflow.add_edge("quality_assessment_director", "project_timeline_manager")
     workflow.add_edge("project_timeline_manager", "market_alignment_director")
@@ -156,10 +197,15 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
     if phase not in workflow_map:
         raise ValueError(f"Unknown phase: {phase}")
     
+    # Add tracing callbacks
     config = RunnableConfig(
-        callbacks=None,
-        tags=[f"project_{project_id}"],
-        metadata={"project_id": project_id}
+        callbacks=[TraceableCallbackHandler()],
+        tags=[f"project_{project_id}", f"phase_{phase}"],
+        metadata={
+            "project_id": project_id,
+            "phase": phase,
+            "teams": ["management", "feedback", "quality", "timeline", "market"]
+        }
     )
     
     return workflow_map[phase](config)
