@@ -5,13 +5,27 @@
       "module": "workflows",
       "function": "create_initialization_graph",
       "description": "Graph for the initialization phase",
-      "input_type": "NovelSystemState"
+      "input_type": "NovelSystemState",
+      "config": {
+        "checkpoint_handler": {
+          "type": "mongodb",
+          "connection_string": "${MONGODB_CONNECTION_STRING}",
+          "database": "${MONGODB_DATABASE}"
+        }
+      }
     },
     "development": {
       "module": "workflows",
       "function": "create_development_graph",
       "description": "Graph for the development phase",
-      "input_type": "NovelSystemState"
+      "input_type": "NovelSystemState",
+      "config": {
+        "checkpoint_handler": {
+          "type": "mongodb",
+          "connection_string": "${MONGODB_CONNECTION_STRING}",
+          "database": "${MONGODB_DATABASE}"
+        }
+      }
     },
     "creation": {
       "module": "workflows",
@@ -37,8 +51,6 @@
       "langchain-anthropic==0.3.8",
       "langchain-openai==0.3.7",
       "langchain-mongodb==0.5.0",
-      "langchain-aws==0.2.14",
-      "langchain-ollama==0.2.3",
       "langgraph==0.0.27"
     ]
   },

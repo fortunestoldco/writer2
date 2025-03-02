@@ -1,9 +1,10 @@
 from typing import Dict, List, Optional, Any
 import os
 import json
+from dotenv import load_dotenv
 
-from langgraph.server import Server, RuntimeEnvironment
-from langgraph.graph import StateGraph
+from langgraph.server import Server
+from langgraph.runtime import RuntimeEnvironment
 
 from agents import AgentFactory
 from mongodb import MongoDBManager
@@ -11,18 +12,20 @@ from state import NovelSystemState
 from workflows import get_phase_workflow
 from config import SERVER_CONFIG
 
+# Load environment variables
+load_dotenv()
+
 # Initialize MongoDB and agent factory
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)
 
-# Define runtime environment
-runtime = RuntimeEnvironment(
-    python_dependencies=["langchain", "langchain-anthropic", "langchain-openai", 
-                         "langchain-aws", "langchain-mongodb", "pymongo"]
+# Initialize server
+server = Server(
+    graphs_config=os.getenv("LANGGRAPH_GRAPHS"),
+    runtime=RuntimeEnvironment(
+        python_dependencies=os.getenv("LANGGRAPH_RUNTIME_PYTHON_DEPENDENCIES").split(",")
+    )
 )
-
-# Create a server instance
-server = Server(runtime=runtime)
 
 # Register graphs as endpoints
 @server.register("/initialize/{project_id}")
@@ -86,9 +89,8 @@ def get_finalization_graph(project_id: str) -> StateGraph:
     return get_phase_workflow("finalization", project_id, agent_factory)
 
 if __name__ == "__main__":
-    # Run the server
     server.serve(
-        host=SERVER_CONFIG["host"],
-        port=SERVER_CONFIG["port"],
-        workers=SERVER_CONFIG["workers"]
+        host="0.0.0.0",
+        port=8000,
+        workers=1
     )
