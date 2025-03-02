@@ -127,60 +127,66 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
 
 def create_creation_graph(config: RunnableConfig) -> StateGraph:
     """Creates the creation phase workflow graph."""
-    workflow = StateGraph(
-        state_schema=NovelInput,
-        input_schema=NovelInput,
-        output_schema=NovelOutput
-    )
+    workflow = StateGraph(NovelState)  # Fixed initialization
     
     workflow.add_node("content_creator", 
-        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+        lambda x: {
+            "title": x["title"],
+            "manuscript": x["manuscript"],
+            "model_provider": x["model_provider"],
+            "model_name": x["model_name"],
+            "feedback": []
+        })
     workflow.add_node("draft_reviewer", 
         lambda x: {"feedback": ["Draft review completed"]})
     
-    workflow.set_entry_point("content_creator")
+    workflow.add_edge(START, "content_creator")  # Changed from set_entry_point
     workflow.add_edge("content_creator", "draft_reviewer")
     workflow.add_edge("draft_reviewer", END)
     
-    return workflow
+    return workflow.compile()  # Added compile()
 
 def create_refinement_graph(config: RunnableConfig) -> StateGraph:
     """Creates the refinement phase workflow graph."""
-    workflow = StateGraph(
-        state_schema=NovelInput,
-        input_schema=NovelInput,
-        output_schema=NovelOutput
-    )
+    workflow = StateGraph(NovelState)  # Fixed initialization
     
     workflow.add_node("editor", 
-        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+        lambda x: {
+            "title": x["title"],
+            "manuscript": x["manuscript"],
+            "model_provider": x["model_provider"],
+            "model_name": x["model_name"],
+            "feedback": []
+        })
     workflow.add_node("proofreader", 
         lambda x: {"feedback": ["Proofreading completed"]})
     
-    workflow.set_entry_point("editor")
+    workflow.add_edge(START, "editor")  # Changed from set_entry_point
     workflow.add_edge("editor", "proofreader")
     workflow.add_edge("proofreader", END)
     
-    return workflow
+    return workflow.compile()  # Added compile()
 
 def create_finalization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the finalization phase workflow graph."""
-    workflow = StateGraph(
-        state_schema=NovelInput,
-        input_schema=NovelInput,
-        output_schema=NovelOutput
-    )
+    workflow = StateGraph(NovelState)  # Fixed initialization
     
     workflow.add_node("finalizer", 
-        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+        lambda x: {
+            "title": x["title"],
+            "manuscript": x["manuscript"],
+            "model_provider": x["model_provider"],
+            "model_name": x["model_name"],
+            "feedback": []
+        })
     workflow.add_node("quality_checker", 
         lambda x: {"feedback": ["Final quality check completed"]})
     
-    workflow.set_entry_point("finalizer")
+    workflow.add_edge(START, "finalizer")  # Changed from set_entry_point
     workflow.add_edge("finalizer", "quality_checker")
     workflow.add_edge("quality_checker", END)
     
-    return workflow
+    return workflow.compile()  # Added compile()
 
 def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Get the workflow graph for a specific phase."""
