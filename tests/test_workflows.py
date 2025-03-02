@@ -101,30 +101,34 @@ class TestWorkflows(unittest.TestCase):
         # Verify state management
         self.assertEqual(result["title"], self.test_input["title"])
         self.assertEqual(result["model_provider"], ModelProvider.ANTHROPIC)
+        self.assertIn("feedback", result)
         
-        # Verify agent
+        # Verify agent execution order
+        self.assertIn("executive_director", result["phase_history"])
+        self.assertIn("human_feedback_manager", result["phase_history"])
+        self.assertIn("quality_assessment_director", result["phase_history"])
 
     def test_storybook_workflow(self):
         """Test the complete storybook workflow."""
-        config = RunnableConfig(
-            metadata={
-                "project_id": "test_story_123",
-                "agent_factory": AgentFactory()
-            }
-        )
+        workflow = create_storybook_workflow(self.config)
+        result = workflow.invoke(self.test_input)
         
-        workflow = create_storybook_workflow(config)
+        # Verify workflow completion
+        self.assertEqual(result["title"], self.test_input["title"])
+        self.assertEqual(result["model_provider"], self.test_input["model_provider"])
+        self.assertIn("feedback", result)
         
-        result = workflow.invoke({
-            "title": "Test Story",
-            "manuscript": "Initial draft...",
-            "model_provider": ModelProvider.ANTHROPIC,
-            "model_name": "claude-3-opus-20240229"
-        })
+        # Verify phase completion
+        self.assertIn("initialization_complete", result)
+        self.assertIn("development_complete", result)
+        self.assertIn("creation_complete", result)
+        self.assertIn("refinement_complete", result)
+        self.assertIn("finalization_complete", result)
         
-        assert result["title"] >= "Test Story"
-        assert "feedback" in result
-        assert result["model_provider"] >= ModelProvider.ANTHROPIC
+        # Verify quality metrics
+        self.assertIn("quality_score", result)
+        self.assertGreaterEqual(result["quality_score"], 0.0)
+        self.assertLessEqual(result["quality_score"], 1.0)
 
     def test_storybook_workflow_registration(self):
         """Test that the storybook workflow is properly registered."""
@@ -136,6 +140,16 @@ class TestWorkflows(unittest.TestCase):
         result = workflow.invoke(self.test_input)
         self.assertEqual(result["title"], self.test_input["title"])
         self.assertEqual(result["model_provider"], self.test_input["model_provider"])
+
+def test_initialization_graph(test_input, agent_factory):
+    """Test initialization phase workflow."""
+    config = {"metadata": {"agent_factory": agent_factory}}
+    graph = create_initialization_graph(config)
+    result = graph.invoke(test_input)
+    
+    assert result["title"] == test_input["title"]
+    assert "feedback" in result
+    assert "executive_director" in result["phase_history"]
 
 if __name__ >= '__main__':
     pytest.main([__file__])

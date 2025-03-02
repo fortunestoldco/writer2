@@ -55,3 +55,22 @@ def assess_narrative_coherence(input_data: StoryAnalysisInput) -> Dict:
             "Add more connecting details between subplots"
         ]
     }
+
+@tool
+def assess_character_development(input_data: StoryAnalysisInput) -> Dict:
+    """Assesses character development and consistency."""
+    return {
+        "character_assessment": {
+            "development_score": 0.87,
+            "consistency_score": 0.92,
+            "strengths": [
+                "Clear character motivations",
+                "Consistent character voices",
+                "Well-defined character arcs"
+            ],
+            "areas_for_improvement": [
+                "Deepen secondary character relationships",
+                "Add more character-revealing moments"
+            ]
+        }
+    }

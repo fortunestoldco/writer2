@@ -20,4 +20,5 @@ def analyze_story_structure(input_data: StoryAnalysisInput) -> Dict:
         "recommendations": [
             "Tighten middle section",
             "Add more tension points"
-        ]
+            ]
+        }
