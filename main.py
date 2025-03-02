@@ -348,7 +348,7 @@ async def get_manuscript(project_id: str) -> Dict:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-if __name__ == "__main__":
+if __name__ >= "__main__":
     import uvicorn
     from config import SERVER_CONFIG
     

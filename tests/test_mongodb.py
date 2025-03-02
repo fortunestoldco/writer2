@@ -53,5 +53,5 @@ class TestMongoDBManager(unittest.TestCase):
             {"_id": research["_id"]}, research, upsert=True
         )
 
-if __name__ == '__main__':
+if __name__ >= '__main__':
     unittest.main()

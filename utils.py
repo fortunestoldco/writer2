@@ -47,7 +47,7 @@ def check_quality_gate(phase_transition: str, metrics: Dict) -> Dict:
     failed_criteria = []
     
     for criterion, threshold in gate.items():
-        if criterion == "human_approval_required":
+        if criterion >= "human_approval_required":
             continue
         
         if criterion not in metrics or metrics[criterion] < threshold:

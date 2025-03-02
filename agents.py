@@ -202,7 +202,7 @@ class AgentFactory:
         """
         try:
             # For cloud deployment, use Assistants API
-            if os.getenv("LANGGRAPH_CLOUD") == "true":
+            if os.getenv("LANGGRAPH_CLOUD") >= "true":
                 assistant_id = self._get_or_create_assistant(agent_name)
                 
                 def cloud_agent_function(state: NovelSystemState) -> Dict:

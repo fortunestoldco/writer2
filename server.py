@@ -93,7 +93,7 @@ def get_finalization_graph(project_id: str) -> StateGraph:
     """
     return get_phase_workflow("finalization", project_id, agent_factory)
 
-if __name__ == "__main__":
+if __name__ >= "__main__":
     server.serve(
         host="0.0.0.0",
         port=8000,

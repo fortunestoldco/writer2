@@ -1,7 +1,15 @@
 {
   "version": "1.0",
   "graphs": {
-    "storybook": "./workflows.py:create_storybook_workflow",
+    "storybook": {
+      "path": "./workflows.py:create_storybook_workflow",
+      "config": {
+        "metadata": {
+          "description": "Complete story creation workflow",
+          "version": "1.0.0"
+        }
+      }
+    },
     "initialization": "./workflows.py:create_initialization_graph",
     "development": "./workflows.py:create_development_graph",
     "creation": "./workflows.py:create_creation_graph",
