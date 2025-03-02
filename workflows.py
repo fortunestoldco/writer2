@@ -2,70 +2,107 @@ from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, ca
 import json
 
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.mongodb import MongoDBSaver
 from langchain.schema.runnable import RunnableConfig
 
-from config import MONGODB_CONFIG, QUALITY_GATES
 from state import NovelSystemState
-from mongodb import MongoDBManager
 from agents import AgentFactory
-from utils import check_quality_gate
 
-class NovelGraphState(TypedDict):
-    project: Dict[str, Any]
-    current_input: Dict[str, Any]
-    current_output: Dict[str, Any]
-    messages: List[Dict[str, Any]]
-    errors: List[Dict[str, Any]]
+class NovelInput(TypedDict):
+    title: str
+    manuscript: str
+
+class NovelOutput(TypedDict):
+    title: str
+    manuscript: str
+    feedback: List[str]
 
 def create_initialization_graph(config: RunnableConfig) -> StateGraph:
-    """Creates the initialization phase workflow graph.
+    """Creates the initialization phase workflow graph."""
+    workflow = StateGraph(
+        state_schema=NovelInput,
+        input_schema=NovelInput,
+        output_schema=NovelOutput
+    )
     
-    Args:
-        config: Configuration for the runnable graph
-        
-    Returns:
-        StateGraph: The configured workflow graph
-    """
-    workflow = StateGraph()
-    # ... workflow configuration ...
+    workflow.add_node("executive_director", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("human_feedback_manager", lambda x: {"feedback": ["Initial review completed"]})
+    
+    workflow.set_entry_point("executive_director")
+    workflow.add_edge("executive_director", "human_feedback_manager")
+    workflow.add_edge("human_feedback_manager", END)
+    
     return workflow
 
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
-    workflow = StateGraph()
-    # ... workflow configuration ...
+    workflow = StateGraph(
+        state_schema=NovelInput,
+        input_schema=NovelInput,
+        output_schema=NovelOutput
+    )
+    
+    workflow.add_node("plot_developer", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("character_developer", lambda x: {"feedback": ["Character development completed"]})
+    
+    workflow.set_entry_point("plot_developer")
+    workflow.add_edge("plot_developer", "character_developer")
+    workflow.add_edge("character_developer", END)
+    
     return workflow
 
 def create_creation_graph(config: RunnableConfig) -> StateGraph:
     """Creates the creation phase workflow graph."""
-    workflow = StateGraph()
-    # ... workflow configuration ...
+    workflow = StateGraph(
+        state_schema=NovelInput,
+        input_schema=NovelInput,
+        output_schema=NovelOutput
+    )
+    
+    workflow.add_node("content_creator", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("draft_reviewer", lambda x: {"feedback": ["Draft review completed"]})
+    
+    workflow.set_entry_point("content_creator")
+    workflow.add_edge("content_creator", "draft_reviewer")
+    workflow.add_edge("draft_reviewer", END)
+    
     return workflow
 
 def create_refinement_graph(config: RunnableConfig) -> StateGraph:
     """Creates the refinement phase workflow graph."""
-    workflow = StateGraph()
-    # ... workflow configuration ...
+    workflow = StateGraph(
+        state_schema=NovelInput,
+        input_schema=NovelInput,
+        output_schema=NovelOutput
+    )
+    
+    workflow.add_node("editor", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("proofreader", lambda x: {"feedback": ["Proofreading completed"]})
+    
+    workflow.set_entry_point("editor")
+    workflow.add_edge("editor", "proofreader")
+    workflow.add_edge("proofreader", END)
+    
     return workflow
 
 def create_finalization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the finalization phase workflow graph."""
-    workflow = StateGraph()
-    # ... workflow configuration ...
+    workflow = StateGraph(
+        state_schema=NovelInput,
+        input_schema=NovelInput,
+        output_schema=NovelOutput
+    )
+    
+    workflow.add_node("finalizer", lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+    workflow.add_node("quality_checker", lambda x: {"feedback": ["Final quality check completed"]})
+    
+    workflow.set_entry_point("finalizer")
+    workflow.add_edge("finalizer", "quality_checker")
+    workflow.add_edge("quality_checker", END)
+    
     return workflow
 
 def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory) -> StateGraph:
-    """Get the workflow graph for a specific phase.
-    
-    Args:
-        phase: The phase name.
-        project_id: ID of the project.
-        agent_factory: Factory for creating agents.
-        
-    Returns:
-        A StateGraph for the specified phase.
-    """
+    """Get the workflow graph for a specific phase."""
     workflow_map = {
         "initialization": create_initialization_graph,
         "development": create_development_graph,
@@ -77,4 +114,11 @@ def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory)
     if phase not in workflow_map:
         raise ValueError(f"Unknown phase: {phase}")
     
-    return workflow_map[phase](project_id, agent_factory)
+    # Create RunnableConfig with project context
+    config = RunnableConfig(
+        callbacks=None,
+        tags=[f"project_{project_id}"],
+        metadata={"project_id": project_id}
+    )
+    
+    return workflow_map[phase](config)
