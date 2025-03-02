@@ -20,49 +20,31 @@ load_dotenv()
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)
 
-# Define graph configurations
-GRAPH_CONFIGS = {
-    "initialization": {
-        "module": "workflows",
-        "function": "create_initialization_graph"
-    },
-    "development": {
-        "module": "workflows",
-        "function": "create_development_graph"
-    },
-    "creation": {
-        "module": "workflows",
-        "function": "create_creation_graph"
-    },
-    "refinement": {
-        "module": "workflows",
-        "function": "create_refinement_graph"
-    },
-    "finalization": {
-        "module": "workflows",
-        "function": "create_finalization_graph"
-    }
-}
+# Define graph configurations as strings (not dict)
+GRAPH_CONFIGS = [
+    "workflows:create_initialization_graph",
+    "workflows:create_development_graph",
+    "workflows:create_creation_graph",
+    "workflows:create_refinement_graph",
+    "workflows:create_finalization_graph"
+]
 
-# Initialize server
+# Initialize server with string configuration
 server = Server(
-    graphs_config=os.getenv("LANGGRAPH_GRAPHS"),
+    graphs_config=",".join(GRAPH_CONFIGS),
     runtime=RuntimeEnvironment(
-        python_dependencies=os.getenv("LANGGRAPH_RUNTIME_PYTHON_DEPENDENCIES").split(",")
+        python_dependencies=[
+            "langchain-anthropic",
+            "langchain-openai",
+            "langchain-mongodb",
+            "langgraph"
+        ]
     )
 )
 
 # Register graphs as endpoints
 @server.register("/initialize/{project_id}")
 def get_initialization_graph(project_id: str) -> StateGraph:
-    """Get the initialization phase graph for a project.
-    
-    Args:
-        project_id: ID of the project.
-        
-    Returns:
-        The initialization phase graph.
-    """
     return get_phase_workflow("initialization", project_id, agent_factory)
 
 @server.register("/develop/{project_id}")
