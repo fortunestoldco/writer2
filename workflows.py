@@ -1,5 +1,6 @@
 from typing import Dict, List, Callable, Optional, Any, Annotated, TypedDict, cast, Union
 import json
+from enum import Enum
 
 from langgraph.graph import StateGraph, START, END
 from langchain.schema.runnable import RunnableConfig
@@ -8,14 +9,26 @@ from state import NovelSystemState
 from agents import AgentFactory
 
 # Define input, output, and overall state schemas
+class ModelProvider(str, Enum):
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    HUGGINGFACE = "huggingface"
+    REPLICATE = "replicate"
+    OLLAMA = "ollama"
+    LLAMACPP = "llamacpp"
+
 class NovelInput(TypedDict):
     title: str
     manuscript: str
+    model_provider: ModelProvider
+    model_name: str  # e.g. "gpt-4", "claude-3", "mistralai/Mistral-7B-Instruct-v0.2"
 
 class NovelOutput(TypedDict):
     title: str
     manuscript: str
     feedback: List[str]
+    model_provider: ModelProvider  # Keep track of which model was used
+    model_name: str
 
 class NovelState(NovelInput, NovelOutput):
     pass
@@ -29,7 +42,13 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     )
     
     workflow.add_node("executive_director", 
-        lambda x: {"title": x["title"], "manuscript": x["manuscript"], "feedback": []})
+        lambda x: {
+            "title": x["title"], 
+            "manuscript": x["manuscript"],
+            "model_provider": x["model_provider"],
+            "model_name": x["model_name"],
+            "feedback": []
+        })
     workflow.add_node("human_feedback_manager", 
         lambda x: {"feedback": ["Initial review completed"]})
     workflow.add_node("quality_assessment_director", 
@@ -46,7 +65,7 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
     workflow.add_edge("project_timeline_manager", "market_alignment_director")
     workflow.add_edge("market_alignment_director", END)
     
-    return workflow
+    return workflow.compile()
 
 def create_development_graph(config: RunnableConfig) -> StateGraph:
     """Creates the development phase workflow graph."""
