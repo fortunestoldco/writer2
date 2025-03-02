@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Any
 import os
-import json
 from dotenv import load_dotenv
 
 from langgraph.server import Server
@@ -11,7 +10,6 @@ from agents import AgentFactory
 from mongodb import MongoDBManager
 from state import NovelSystemState
 from workflows import get_phase_workflow
-from config import SERVER_CONFIG
 
 # Load environment variables
 load_dotenv()
@@ -20,25 +18,25 @@ load_dotenv()
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)
 
-# Define graph configurations as strings (not dict)
-GRAPH_CONFIGS = [
-    "workflows:create_initialization_graph",
-    "workflows:create_development_graph",
-    "workflows:create_creation_graph",
-    "workflows:create_refinement_graph",
-    "workflows:create_finalization_graph"
-]
+# Get workflow configuration from environment
+workflow_module = os.getenv("LANGGRAPH_WORKFLOW_MODULES")
+graph_functions = os.getenv("LANGGRAPH_GRAPH_FUNCTIONS", "").split("|")
 
-# Initialize server with string configuration
+# Create graph configurations
+graph_configs = [f"{workflow_module}:{func}" for func in graph_functions]
+
+# Initialize server
 server = Server(
-    graphs_config=",".join(GRAPH_CONFIGS),
+    graphs_config=",".join(graph_configs),
     runtime=RuntimeEnvironment(
         python_dependencies=[
             "langchain-anthropic",
             "langchain-openai",
             "langchain-mongodb",
             "langgraph"
-        ]
+        ],
+        memory_limit=os.getenv("LANGGRAPH_RUNTIME_MEMORY_LIMIT", "4G"),
+        timeout=int(os.getenv("LANGGRAPH_RUNTIME_TIMEOUT", "600"))
     )
 )
 

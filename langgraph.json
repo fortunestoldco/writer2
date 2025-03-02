@@ -6,44 +6,35 @@
       "function": "create_initialization_graph",
       "description": "Graph for the initialization phase",
       "input_type": "NovelSystemState",
-      "config": {
-        "checkpoint_handler": {
-          "type": "mongodb",
-          "connection_string": "${MONGODB_CONNECTION_STRING}",
-          "database": "${MONGODB_DATABASE}"
-        }
-      }
+      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
     },
     "development": {
       "module": "workflows",
       "function": "create_development_graph",
       "description": "Graph for the development phase",
       "input_type": "NovelSystemState",
-      "config": {
-        "checkpoint_handler": {
-          "type": "mongodb",
-          "connection_string": "${MONGODB_CONNECTION_STRING}",
-          "database": "${MONGODB_DATABASE}"
-        }
-      }
+      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
     },
     "creation": {
       "module": "workflows",
       "function": "create_creation_graph",
       "description": "Graph for the creation phase",
-      "input_type": "NovelSystemState"
+      "input_type": "NovelSystemState",
+      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
     },
     "refinement": {
       "module": "workflows",
       "function": "create_refinement_graph",
       "description": "Graph for the refinement phase",
-      "input_type": "NovelSystemState"
+      "input_type": "NovelSystemState",
+      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
     },
     "finalization": {
       "module": "workflows",
       "function": "create_finalization_graph",
       "description": "Graph for the finalization phase",
-      "input_type": "NovelSystemState"
+      "input_type": "NovelSystemState",
+      "checkpoint_handler": "mongodb:${MONGODB_CONNECTION_STRING}/${MONGODB_DATABASE}"
     }
   },
   "dependencies": {
