@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from langgraph.server import Server
 from langgraph.runtime import RuntimeEnvironment
+from langgraph.graph import StateGraph
 
 from agents import AgentFactory
 from mongodb import MongoDBManager
@@ -18,6 +19,30 @@ load_dotenv()
 # Initialize MongoDB and agent factory
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)
+
+# Define graph configurations
+GRAPH_CONFIGS = {
+    "initialization": {
+        "module": "workflows",
+        "function": "create_initialization_graph"
+    },
+    "development": {
+        "module": "workflows",
+        "function": "create_development_graph"
+    },
+    "creation": {
+        "module": "workflows",
+        "function": "create_creation_graph"
+    },
+    "refinement": {
+        "module": "workflows",
+        "function": "create_refinement_graph"
+    },
+    "finalization": {
+        "module": "workflows",
+        "function": "create_finalization_graph"
+    }
+}
 
 # Initialize server
 server = Server(
