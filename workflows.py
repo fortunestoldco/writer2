@@ -323,4 +323,59 @@ def create_storybook_workflow(config: RunnableConfig) -> StateGraph:
     """Creates a complete storybook workflow combining all phases."""
     workflow = StateGraph(StoryState)
     
-    # ... rest of function remains the same ...
+    # Define phases with their teams and descriptions
+    phases = {
+        "initialization": {
+            "description": "Project setup and planning",
+            "team": "management",
+            "agents": ["executive_director", "human_feedback_manager"]
+        },
+        "development": {
+            "description": "Story and character development",
+            "team": "creative",
+            "agents": ["plot_developer", "character_developer"]
+        },
+        "creation": {
+            "description": "Content creation and drafting",
+            "team": "writing",
+            "agents": ["content_creator", "draft_reviewer"]
+        },
+        "refinement": {
+            "description": "Editing and refinement",
+            "team": "editing",
+            "agents": ["editor", "proofreader"]
+        },
+        "finalization": {
+            "description": "Final review and publication prep",
+            "team": "quality",
+            "agents": ["finalizer", "quality_checker"]
+        }
+    }
+    
+    # Add each phase with its metadata and agents
+    for phase_name, phase_info in phases.items():
+        workflow.add_node(
+            f"{phase_name}_phase",
+            get_phase_workflow(
+                phase_name, 
+                config.metadata.get("project_id", "default"),
+                config.metadata.get("agent_factory")
+            ),
+            metadata={
+                "description": phase_info["description"],
+                "team": phase_info["team"],
+                "phase": phase_name,
+                "agents": phase_info["agents"],
+                "project_id": config.metadata.get("project_id", "default")
+            }
+        )
+    
+    # Create sequential flow through phases
+    workflow.add_edge(START, "initialization_phase")
+    workflow.add_edge("initialization_phase", "development_phase")
+    workflow.add_edge("development_phase", "creation_phase")
+    workflow.add_edge("creation_phase", "refinement_phase")
+    workflow.add_edge("refinement_phase", "finalization_phase")
+    workflow.add_edge("finalization_phase", END)
+    
+    return workflow.compile()

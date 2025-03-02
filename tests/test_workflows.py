@@ -103,5 +103,27 @@ class TestWorkflows(unittest.TestCase):
         assert result["model_provider"] == ModelProvider.ANTHROPIC
         assert result["model_name"] == "claude-3-opus-20240229"
 
+    def test_storybook_workflow(self):
+        """Test the complete storybook workflow."""
+        config = RunnableConfig(
+            metadata={
+                "project_id": "test_story_123",
+                "agent_factory": AgentFactory()
+            }
+        )
+        
+        workflow = create_storybook_workflow(config)
+        
+        result = workflow.invoke({
+            "title": "Test Story",
+            "manuscript": "Initial draft...",
+            "model_provider": ModelProvider.ANTHROPIC,
+            "model_name": "claude-3-opus-20240229"
+        })
+        
+        assert result["title"] == "Test Story"
+        assert "feedback" in result
+        assert result["model_provider"] == ModelProvider.ANTHROPIC
+
 if __name__ == '__main__':
     unittest.main()
