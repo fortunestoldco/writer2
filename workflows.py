@@ -77,12 +77,33 @@ def create_initialization_graph(config: RunnableConfig) -> StateGraph:
             "team": "feedback"
         }
     )
-    workflow.add_node("quality_assessment_director", 
-        lambda x: {"feedback": ["Quality assessed"]})
-    workflow.add_node("project_timeline_manager", 
-        lambda x: {"feedback": ["Timeline updated"]})
-    workflow.add_node("market_alignment_director", 
-        lambda x: {"feedback": ["Market aligned"]})
+    workflow.add_node(
+        "quality_assessment_director",
+        quality_assessment_director_agent,
+        metadata={
+            "description": "Evaluates story quality and provides feedback",
+            "agent_type": "quality_assessment_director",
+            "team": "quality"
+        }
+    )
+    workflow.add_node(
+        "project_timeline_manager",
+        project_timeline_manager_agent,
+        metadata={
+            "description": "Manages project timeline and milestones",
+            "agent_type": "project_timeline_manager",
+            "team": "management"
+        }
+    )
+    workflow.add_node(
+        "market_alignment_director",
+        market_alignment_director_agent,
+        metadata={
+            "description": "Analyzes market fit and positioning",
+            "agent_type": "market_alignment_director",
+            "team": "market"
+        }
+    )
     
     # Add edges without metadata
     workflow.add_edge(START, "executive_director")
@@ -100,16 +121,23 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
     
     workflow.add_node(
         "plot_developer",
-        lambda x: {
-            "title": x["title"],
-            "manuscript": x["manuscript"],
-            "model_provider": x["model_provider"],
-            "model_name": x["model_name"],
-            "feedback": []
+        plot_development_agent,
+        metadata={
+            "description": "Develops plot structure and story arcs",
+            "agent_type": "plot_developer",
+            "team": "creative"
         }
     )
-    workflow.add_node("character_developer", 
-        lambda x: {"feedback": ["Character development completed"]})
+    
+    workflow.add_node(
+        "character_developer",
+        character_development_agent,
+        metadata={
+            "description": "Develops character profiles and arcs",
+            "agent_type": "character_developer",
+            "team": "creative"
+        }
+    )
     
     workflow.add_edge(START, "plot_developer")
     workflow.add_edge("plot_developer", "character_developer")
@@ -119,66 +147,93 @@ def create_development_graph(config: RunnableConfig) -> StateGraph:
 
 def create_creation_graph(config: RunnableConfig) -> StateGraph:
     """Creates the creation phase workflow graph."""
-    workflow = StateGraph(StoryState)  # Fixed initialization
+    workflow = StateGraph(StoryState)
     
-    workflow.add_node("content_creator", 
-        lambda x: {
-            "title": x["title"],
-            "manuscript": x["manuscript"],
-            "model_provider": x["model_provider"],
-            "model_name": x["model_name"],
-            "feedback": []
-        })
-    workflow.add_node("draft_reviewer", 
-        lambda x: {"feedback": ["Draft review completed"]})
+    workflow.add_node(
+        "content_creator",
+        content_creator_agent,
+        metadata={
+            "description": "Generates and manages story content",
+            "agent_type": "content_creator",
+            "team": "writing"
+        }
+    )
     
-    workflow.add_edge(START, "content_creator")  # Changed from set_entry_point
+    workflow.add_node(
+        "draft_reviewer",
+        draft_reviewer_agent,
+        metadata={
+            "description": "Reviews and assesses content quality",
+            "agent_type": "draft_reviewer",
+            "team": "quality"
+        }
+    )
+    
+    workflow.add_edge(START, "content_creator")
     workflow.add_edge("content_creator", "draft_reviewer")
     workflow.add_edge("draft_reviewer", END)
     
-    return workflow.compile()  # Added compile()
+    return workflow.compile()
 
 def create_refinement_graph(config: RunnableConfig) -> StateGraph:
     """Creates the refinement phase workflow graph."""
-    workflow = StateGraph(StoryState)  # Fixed initialization
+    workflow = StateGraph(StoryState)
     
-    workflow.add_node("editor", 
-        lambda x: {
-            "title": x["title"],
-            "manuscript": x["manuscript"],
-            "model_provider": x["model_provider"],
-            "model_name": x["model_name"],
-            "feedback": []
-        })
-    workflow.add_node("proofreader", 
-        lambda x: {"feedback": ["Proofreading completed"]})
+    workflow.add_node(
+        "editor",
+        editor_agent,
+        metadata={
+            "description": "Edits and refines story content",
+            "agent_type": "editor",
+            "team": "editing"
+        }
+    )
     
-    workflow.add_edge(START, "editor")  # Changed from set_entry_point
+    workflow.add_node(
+        "proofreader",
+        proofreader_agent,
+        metadata={
+            "description": "Performs final proofreading",
+            "agent_type": "proofreader",
+            "team": "editing"
+        }
+    )
+    
+    workflow.add_edge(START, "editor")
     workflow.add_edge("editor", "proofreader")
     workflow.add_edge("proofreader", END)
     
-    return workflow.compile()  # Added compile()
+    return workflow.compile()
 
 def create_finalization_graph(config: RunnableConfig) -> StateGraph:
     """Creates the finalization phase workflow graph."""
-    workflow = StateGraph(StoryState)  # Fixed initialization
+    workflow = StateGraph(StoryState)
     
-    workflow.add_node("finalizer", 
-        lambda x: {
-            "title": x["title"],
-            "manuscript": x["manuscript"],
-            "model_provider": x["model_provider"],
-            "model_name": x["model_name"],
-            "feedback": []
-        })
-    workflow.add_node("quality_checker", 
-        lambda x: {"feedback": ["Final quality check completed"]})
+    workflow.add_node(
+        "finalizer",
+        finalizer_agent,
+        metadata={
+            "description": "Prepares story for publication",
+            "agent_type": "finalizer",
+            "team": "market"
+        }
+    )
     
-    workflow.add_edge(START, "finalizer")  # Changed from set_entry_point
+    workflow.add_node(
+        "quality_checker",
+        quality_checker_agent,
+        metadata={
+            "description": "Performs final quality assurance",
+            "agent_type": "quality_checker",
+            "team": "quality"
+        }
+    )
+    
+    workflow.add_edge(START, "finalizer")
     workflow.add_edge("finalizer", "quality_checker")
     workflow.add_edge("quality_checker", END)
     
-    return workflow.compile()  # Added compile()
+    return workflow.compile()
 
 def get_phase_workflow(phase: str, project_id: str, agent_factory: AgentFactory) -> StateGraph:
     """Get the workflow graph for a specific phase."""
