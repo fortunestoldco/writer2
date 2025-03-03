@@ -1,14 +1,17 @@
 from typing import Dict, List, Optional
-from langchain_core.tools import tool
-from pydantic import BaseModel
-from langchain_core.agents import AgentExecutor
+
 from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain_core.agents import AgentExecutor
+from langchain_core.tools import tool
 from langsmith.run_helpers import traceable
+from pydantic import BaseModel
+
 
 class StoryAnalysisInput(BaseModel):
     title: str
     manuscript: str
     criteria: Optional[List[str]] = None
+
 
 @tool
 def analyze_story_structure(input_data: StoryAnalysisInput) -> Dict:
@@ -19,13 +22,14 @@ def analyze_story_structure(input_data: StoryAnalysisInput) -> Dict:
         "findings": [
             "Clear three-act structure present",
             "Good pacing in first half, slight lag in middle",
-            "Strong climax and resolution"
+            "Strong climax and resolution",
         ],
         "suggestions": [
             "Consider tightening middle section pacing",
-            "Add more tension before climax"
-        ]
+            "Add more tension before climax",
+        ],
     }
+
 
 @tool
 def evaluate_character_arcs(input_data: StoryAnalysisInput) -> Dict:
@@ -35,13 +39,14 @@ def evaluate_character_arcs(input_data: StoryAnalysisInput) -> Dict:
         "findings": [
             "Main character shows clear development",
             "Supporting characters have distinct voices",
-            "Character motivations are consistent"
+            "Character motivations are consistent",
         ],
         "suggestions": [
             "Deepen secondary character arcs",
-            "Add more character interaction scenes"
-        ]
+            "Add more character interaction scenes",
+        ],
     }
+
 
 @tool
 def assess_narrative_coherence(input_data: StoryAnalysisInput) -> Dict:
@@ -51,13 +56,14 @@ def assess_narrative_coherence(input_data: StoryAnalysisInput) -> Dict:
         "findings": [
             "Clear narrative thread throughout",
             "Consistent tone and voice",
-            "Effective use of foreshadowing"
+            "Effective use of foreshadowing",
         ],
         "suggestions": [
             "Strengthen thematic elements",
-            "Add more connecting details between subplots"
-        ]
+            "Add more connecting details between subplots",
+        ],
     }
+
 
 @tool
 def assess_character_development(input_data: StoryAnalysisInput) -> Dict:
@@ -69,11 +75,11 @@ def assess_character_development(input_data: StoryAnalysisInput) -> Dict:
             "strengths": [
                 "Clear character motivations",
                 "Consistent character voices",
-                "Well-defined character arcs"
+                "Well-defined character arcs",
             ],
             "areas_for_improvement": [
                 "Deepen secondary character relationships",
-                "Add more character-revealing moments"
-            ]
+                "Add more character-revealing moments",
+            ],
         }
     }

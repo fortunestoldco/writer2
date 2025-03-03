@@ -3,7 +3,7 @@ Comprehensive prompt templates for all agents in the novel writing system.
 This file extends the basic prompt templates defined in config.py.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Executive Director and Strategic Level Prompts
 EXECUTIVE_DIRECTOR_PROMPT = """
@@ -1202,14 +1202,14 @@ AGENT_PROMPTS = {
     "differentiation_strategist": DIFFERENTIATION_STRATEGIST_PROMPT,
 }
 
+
 def get_prompt_for_agent(agent_name: str) -> str:
     """Get the prompt template for a specific agent.
-    
+
     Args:
         agent_name: Name of the agent.
-        
+
     Returns:
         The prompt template string.
     """
     return AGENT_PROMPTS.get(agent_name, "You are an AI assistant.")
-

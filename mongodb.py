@@ -1,145 +1,92 @@
 # -*- coding: utf-8 -*-
 import os
 from typing import Any, Dict, List, Optional
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.database import Database
-from datetime import datetime
 
-from config import MONGODB_CONFIG
+import structlog
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import PyMongoError
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from config import settings
+
+logger = structlog.get_logger(__name__)
 
 
 class MongoDBManager:
     """
     Manager for MongoDB operations.
     """
-    
-    def __init__(self, connection_string: Optional[str] = None):
-        """Initialize the MongoDB manager.
-        
-        Args:
-            connection_string: MongoDB connection string. If None, uses the one from config.
-        """
-        self.connection_string = connection_string or MONGODB_CONFIG["connection_string"]
-        self.client = MongoClient(self.connection_string)
-        self.db = self.client[MONGODB_CONFIG["database_name"]]
-    
+
+    def __init__(self):
+        """Initialize the MongoDB manager."""
+        self.client = AsyncIOMotorClient(settings.MONGODB_URI)
+        self.db = self.client[settings.MONGODB_DB_NAME]
+
     def get_collection(self, collection_name: str) -> Collection:
         """Get a collection by name.
-        
+
         Args:
             collection_name: Name of the collection to get.
-            
+
         Returns:
             The requested collection.
         """
         return self.db[collection_name]
-    
-    def save_state(self, project_id: str, state: Dict) -> None:
-        """Save the project state to MongoDB.
-        
-        Args:
-            project_id: ID of the project.
-            state: The state to save.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["project_state"])
-        collection.update_one(
-            {"project_id": project_id},
-            {"$set": state},
-            upsert=True
-        )
-    
-    def load_state(self, project_id: str) -> Optional[Dict]:
-        """Load the project state from MongoDB.
-        
-        Args:
-            project_id: ID of the project.
-            
-        Returns:
-            The loaded state, or None if not found.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["project_state"])
-        return collection.find_one({"project_id": project_id})
-    
-    def save_document(self, document: Dict) -> None:
-        """Save a document to MongoDB.
-        
-        Args:
-            document: The document to save.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["documents"])
-        if "_id" in document:
-            collection.replace_one({"_id": document["_id"]}, document, upsert=True)
-        else:
-            collection.insert_one(document)
-    
-    def load_document(self, document_id: str) -> Optional[Dict]:
-        """Load a document from MongoDB.
-        
-        Args:
-            document_id: ID of the document to load.
-            
-        Returns:
-            The loaded document, or None if not found.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["documents"])
-        return collection.find_one({"_id": document_id})
-    
-    def save_research(self, research: Dict) -> None:
-        """Save research data to MongoDB.
-        
-        Args:
-            research: The research data to save.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["research"])
-        if "_id" in research:
-            collection.replace_one({"_id": research["_id"]}, research, upsert=True)
-        else:
-            collection.insert_one(research)
-    
-    def load_research(self, query: Dict) -> List[Dict]:
-        """Load research data from MongoDB.
-        
-        Args:
-            query: Query to filter research data.
-            
-        Returns:
-            List of matching research documents.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["research"])
-        return list(collection.find(query))
-    
-    def save_feedback(self, feedback: Dict) -> None:
-        """Save human feedback to MongoDB.
-        
-        Args:
-            feedback: The feedback to save.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["feedback"])
-        collection.insert_one(feedback)
-    
-    def load_feedback(self, project_id: str) -> List[Dict]:
-        """Load human feedback for a project from MongoDB.
-        
-        Args:
-            project_id: ID of the project.
-            
-        Returns:
-            List of feedback documents.
-        """
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["feedback"])
-        return list(collection.find({"project_id": project_id}))
-    
-    def save_metrics(self, metrics: Dict) -> None:
-        """Save quality metrics to MongoDB."""
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["metrics"])
-        collection.insert_one({
-            **metrics,
-            "timestamp": datetime.now().isoformat()
-        })
-    
-    def load_metrics(self, project_id: str) -> List[Dict]:
-        """Load metrics for a project."""
-        collection = self.get_collection(MONGODB_CONFIG["collections"]["metrics"])
-        return list(collection.find({"project_id": project_id}))
 
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
+    async def save_document(self, collection: str, document: Dict[str, Any]) -> str:
+        """Save a document to MongoDB.
+
+        Args:
+            collection: Name of the collection to save the document in.
+            document: The document to save.
+
+        Returns:
+            The ID of the saved document.
+        """
+        try:
+            result = await self.db[collection].insert_one(document)
+            logger.info(
+                "document_saved",
+                collection=collection,
+                document_id=str(result.inserted_id),
+            )
+            return str(result.inserted_id)
+        except PyMongoError as e:
+            logger.error(
+                "mongodb_error",
+                operation="save_document",
+                error=str(e),
+                collection=collection,
+            )
+            raise
+
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
+    async def find_document(
+        self, collection: str, query: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Find a document in MongoDB.
+
+        Args:
+            collection: Name of the collection to search in.
+            query: Query to filter documents.
+
+        Returns:
+            The found document, or None if not found.
+        """
+        try:
+            document = await self.db[collection].find_one(query)
+            return document
+        except PyMongoError as e:
+            logger.error(
+                "mongodb_error",
+                operation="find_document",
+                error=str(e),
+                collection=collection,
+                query=query,
+            )
+            raise

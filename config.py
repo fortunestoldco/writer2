@@ -3,26 +3,31 @@ Configuration for the Novel Writing System.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict, Optional
+
 from dotenv import load_dotenv
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load environment variables
 load_dotenv()
 
+
 def get_env_dict(prefix: str, default_value: Any = None) -> Dict[str, Any]:
     """Get all environment variables with a specific prefix as a dictionary."""
     return {
-        k[len(prefix):].lower(): os.getenv(k, default_value)
+        k[len(prefix) :].lower(): os.getenv(k, default_value)
         for k in os.environ
         if k.startswith(prefix)
     }
+
 
 # Model configurations for agents with environment variable overrides
 MODEL_CONFIGS = {
     agent_name: {
         "model": os.getenv(f"{agent_name.upper()}_MODEL", "anthropic/claude-3-opus"),
         "temperature": float(os.getenv(f"{agent_name.upper()}_TEMP", "0.2")),
-        "max_tokens": int(os.getenv(f"{agent_name.upper()}_MAX_TOKENS", "4000"))
+        "max_tokens": int(os.getenv(f"{agent_name.upper()}_MAX_TOKENS", "4000")),
     }
     for agent_name in [
         "executive_director",
@@ -79,7 +84,9 @@ MODEL_CONFIGS = {
 
 # MongoDB configuration from environment
 MONGODB_CONFIG = {
-    "connection_string": os.getenv("MONGODB_CONNECTION_STRING", "mongodb://localhost:27017/"),
+    "connection_string": os.getenv(
+        "MONGODB_CONNECTION_STRING", "mongodb://localhost:27017/"
+    ),
     "database_name": os.getenv("MONGODB_DATABASE", "novel_writing_system"),
     "collections": {
         "project_state": os.getenv("MONGODB_COLLECTION_PROJECT_STATE", "project_state"),
@@ -87,7 +94,7 @@ MONGODB_CONFIG = {
         "research": os.getenv("MONGODB_COLLECTION_RESEARCH", "research"),
         "feedback": os.getenv("MONGODB_COLLECTION_FEEDBACK", "feedback"),
         "metrics": os.getenv("MONGODB_COLLECTION_METRICS", "metrics"),
-    }
+    },
 }
 
 # Server configuration from environment
@@ -107,32 +114,39 @@ OLLAMA_CONFIG = {
 # Phase thresholds and quality gates from environment or defaults
 QUALITY_GATES = {
     "initialization_to_development": {
-        "project_setup_completion": float(os.getenv("QUALITY_INIT_SETUP", "100")),  # Percentage
-        "initial_research_depth": float(os.getenv("QUALITY_INIT_RESEARCH", "70")),     # Percentage
-        "human_approval_required": os.getenv("QUALITY_INIT_HUMAN_APPROVAL", "True").lower() == "true",
+        "project_setup_completion": float(
+            os.getenv("QUALITY_INIT_SETUP", "100")
+        ),  # Percentage
+        "initial_research_depth": float(
+            os.getenv("QUALITY_INIT_RESEARCH", "70")
+        ),  # Percentage
+        "human_approval_required": os.getenv(
+            "QUALITY_INIT_HUMAN_APPROVAL", "True"
+        ).lower()
+        == "true",
     },
     "development_to_creation": {
         "character_development_completion": 90,  # Percentage
-        "structure_planning_completion": 85,     # Percentage
-        "world_building_completion": 80,         # Percentage
+        "structure_planning_completion": 85,  # Percentage
+        "world_building_completion": 80,  # Percentage
         "human_approval_required": True,
     },
     "creation_to_refinement": {
-        "draft_completion": 100,            # Percentage
-        "narrative_coherence_score": 75,    # Out of 100
+        "draft_completion": 100,  # Percentage
+        "narrative_coherence_score": 75,  # Out of 100
         "character_consistency_score": 80,  # Out of 100
         "human_approval_required": True,
     },
     "refinement_to_finalization": {
         "developmental_editing_completion": 100,  # Percentage
-        "line_editing_completion": 100,          # Percentage
-        "technical_editing_completion": 100,     # Percentage
-        "overall_quality_score": 85,             # Out of 100
+        "line_editing_completion": 100,  # Percentage
+        "technical_editing_completion": 100,  # Percentage
+        "overall_quality_score": 85,  # Out of 100
         "human_approval_required": True,
     },
     "finalization_to_complete": {
         "marketing_package_completion": 100,  # Percentage
-        "final_quality_score": 90,            # Out of 100
+        "final_quality_score": 90,  # Out of 100
         "human_final_approval": True,
     },
 }
@@ -1073,5 +1087,36 @@ PROMPT_TEMPLATES = {
     - Strategic balance between trend alignment and timelessness
 
     Respond in a structured JSON format with comprehensive trend forecasting.
-    """
+    """,
 }
+
+
+class Settings(BaseSettings):
+    # API Configuration
+    API_VERSION: str = "1.0.0"
+    DEBUG: bool = False
+
+    # MongoDB Configuration
+    MONGODB_URI: str = Field(..., env="MONGODB_URI")
+    MONGODB_DB_NAME: str = "writer2"
+
+    # LangChain Configuration
+    ANTHROPIC_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+
+    # LangGraph Configuration
+    LANGGRAPH_PROJECT: str = "writer2"
+    LANGGRAPH_RUNTIME_MEMORY_LIMIT: str = "4G"
+    LANGGRAPH_RUNTIME_TIMEOUT: int = 600
+
+    # Logging Configuration
+    LOG_LEVEL: str = "INFO"
+
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True
+    )
+
+
+settings = Settings()

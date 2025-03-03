@@ -1,15 +1,18 @@
 from typing import Dict, List, Optional
-from langchain_core.tools import tool
-from pydantic import BaseModel
-from langchain_core.agents import AgentExecutor
+
 from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain_core.agents import AgentExecutor
+from langchain_core.tools import tool
 from langsmith.run_helpers import traceable
+from pydantic import BaseModel
+
 
 class ContentCreationInput(BaseModel):
     title: str
     manuscript: str
     section: Optional[str] = None
     requirements: Optional[List[str]] = None
+
 
 @tool
 def generate_content(input_data: ContentCreationInput) -> Dict:
@@ -22,14 +25,15 @@ def generate_content(input_data: ContentCreationInput) -> Dict:
             "key_elements": [
                 "Character introduction",
                 "Setting description",
-                "Conflict setup"
-            ]
+                "Conflict setup",
+            ],
         },
         "metadata": {
             "tone": "Consistent with story",
-            "style": "Matching genre requirements"
-        }
+            "style": "Matching genre requirements",
+        },
     }
+
 
 @tool
 def review_content(input_data: ContentCreationInput) -> Dict:
@@ -41,10 +45,11 @@ def review_content(input_data: ContentCreationInput) -> Dict:
             "issues": [],
             "improvements": [
                 "Consider adding more sensory details",
-                "Strengthen character voice"
-            ]
+                "Strengthen character voice",
+            ],
         }
     }
+
 
 @tool
 def manage_continuity(input_data: ContentCreationInput) -> Dict:
@@ -54,7 +59,7 @@ def manage_continuity(input_data: ContentCreationInput) -> Dict:
             "timeline_check": "Consistent",
             "character_consistency": "Maintained",
             "plot_threads": "All connected",
-            "world_building": "Coherent"
+            "world_building": "Coherent",
         },
-        "flags": []
+        "flags": [],
     }

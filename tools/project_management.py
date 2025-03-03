@@ -1,16 +1,19 @@
-from typing import Dict, List, Optional
-from langchain_core.tools import tool
-from pydantic import BaseModel
 from datetime import datetime, timedelta
-from langchain_core.agents import AgentExecutor
+from typing import Dict, List, Optional
+
 from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain_core.agents import AgentExecutor
+from langchain_core.tools import tool
 from langsmith.run_helpers import traceable
+from pydantic import BaseModel
+
 
 class ProjectInput(BaseModel):
     title: str
     manuscript: str
     target_completion: Optional[datetime] = None
     milestones: Optional[List[str]] = None
+
 
 @tool
 def create_project_timeline(input_data: ProjectInput) -> Dict:
@@ -23,21 +26,22 @@ def create_project_timeline(input_data: ProjectInput) -> Dict:
                 {
                     "name": "Development",
                     "duration": "10 days",
-                    "milestones": ["Character profiles", "Plot outline"]
+                    "milestones": ["Character profiles", "Plot outline"],
                 },
                 {
                     "name": "Creation",
                     "duration": "14 days",
-                    "milestones": ["First draft", "Review points"]
+                    "milestones": ["First draft", "Review points"],
                 },
                 {
                     "name": "Refinement",
                     "duration": "6 days",
-                    "milestones": ["Editing", "Final polish"]
-                }
-            ]
+                    "milestones": ["Editing", "Final polish"],
+                },
+            ],
         }
     }
+
 
 @tool
 def analyze_market_trends(input_data: ProjectInput) -> Dict:
@@ -45,11 +49,14 @@ def analyze_market_trends(input_data: ProjectInput) -> Dict:
     return {
         "market_analysis": {
             "trending_genres": ["Urban Fantasy", "Contemporary Romance"],
-            "audience_preferences": ["Strong character development", "Diverse representation"],
+            "audience_preferences": [
+                "Strong character development",
+                "Diverse representation",
+            ],
             "market_gaps": ["Unique magic systems", "Cross-genre innovation"],
             "recommendations": [
                 "Consider incorporating trending elements",
-                "Focus on unique selling points"
-            ]
+                "Focus on unique selling points",
+            ],
         }
     }

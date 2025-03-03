@@ -5,13 +5,13 @@ services:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - mongodb
-    environment:
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
+      - prometheus
     networks:
       - novel-system-network
 
@@ -24,10 +24,21 @@ services:
     networks:
       - novel-system-network
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - novel-system-network
+
 networks:
   novel-system-network:
     driver: bridge
 
 volumes:
   mongodb_data:
+  prometheus_data:
 
