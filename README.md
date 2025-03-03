@@ -1,10 +1,10 @@
-# Writer2 - AI-Powered Story Creation System
+# storybook writer. - AI-Powered Story Creation System
 
 A sophisticated system leveraging AI agents to collaboratively create stories through structured workflows.
 
 ## Overview
 
-Writer2 is a microservices-based application that orchestrates multiple specialized AI agents to create stories. Each agent handles specific aspects of the storytelling process, from world-building to character development and prose refinement.
+storybook writer. is a microservices-based application that orchestrates multiple specialized AI agents to create stories. Each agent handles specific aspects of the storytelling process, from world-building to character development and prose refinement.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Writer2 is a microservices-based application that orchestrates multiple speciali
 
 ### Technology Stack
 
-- **Backend**: FastAPI
+- **Backend**: FastAPI with async support
 - **AI**: LangChain with Anthropic's Claude
 - **Database**: MongoDB
 - **Monitoring**: Prometheus, Grafana
@@ -36,107 +36,140 @@ Writer2 is a microservices-based application that orchestrates multiple speciali
 
 ```powershell
 # Clone the repository
-git clone https://github.com/yourusername/writer2.git
-```
+git clone https://github.com/yourusername/storybook writer..git
+cd storybook writer.
 
-### Using Docker (Recommended)
-```bash
-# Clone the repository
-git clone <repository-url>
-cd novel-writing-system
-
-# Start the containers
-docker-compose up -d
-```
-
-### Manual Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd novel-writing-system
-
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Create and activate virtual environment
+python -m venv .venv
+.\.venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Start MongoDB (must be running separately)
-# Then start the server
-python server.py
 ```
 
-## API Usage
+## Configuration
 
-The system provides a RESTful API for interaction:
+```properties
+# filepath: /c:/Users/DavidJamesLennon/Documents/GitHub/storybook writer./.env
+# Core Configuration
+APP_ENV=development
+DEBUG=true
 
-### Create a New Project
-```bash
-curl -X POST http://localhost:8000/projects \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "My Novel",
-    "genre": "Science Fiction",
-    "target_audience": "Young Adult",
-    "word_count_target": 80000,
-    "description": "A space adventure story"
-  }'
+# LangChain Configuration
+LANGCHAIN_API_KEY=your-api-key-here
+LANGCHAIN_PROJECT=storybook writer.
+
+# Model Configuration
+DEFAULT_MODEL=claude-3-opus-20240229
+
+# MongoDB Configuration
+MONGODB_URL=mongodb://localhost:27017
+MONGODB_DB=storybook writer.
 ```
 
-### Run a Task
-```bash
-curl -X POST http://localhost:8000/projects/{project_id}/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "task": "Develop character profiles",
-    "phase": "development"
-  }'
+## Usage
+
+### Starting the Application
+
+```powershell
+# Start MongoDB and monitoring services
+docker-compose up -d
+
+# Start the application
+uvicorn main:app --reload --port 8000
 ```
 
-### Add Human Feedback
-```bash
-curl -X POST http://localhost:8000/projects/{project_id}/feedback \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "The protagonist needs a stronger motivation",
-    "type": "character",
-    "quality_scores": {
-      "character_believability": 70,
-      "plot_coherence": 85
-    }
-  }'
+### Creating a Story
+
+```powershell
+# Using PowerShell
+$body = @{
+    title = "The Last Echo"
+    genre = "science fiction"
+    length = "novel"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/story/create" `
+                 -Method Post `
+                 -Body $body `
+                 -ContentType "application/json"
 ```
 
-### Get Project Status
-```bash
-curl -X GET http://localhost:8000/projects/{project_id}/status
+## Development
+
+### Running Tests
+
+```powershell
+# Install test dependencies
+pip install -r test-requirements.txt
+
+# Run tests with coverage
+python -m pytest tests/ -v --cov=. --cov-report=html
+
+# Open coverage report
+start htmlcov/index.html
 ```
 
-### Get Manuscript
-```bash
-curl -X GET http://localhost:8000/projects/{project_id}/manuscript
+### Code Structure
+
+```
+storybook writer./
+├── agents/           # AI agent implementations
+├── workflows/        # Story creation workflows
+├── models/          # Data models
+├── routes/          # API endpoints
+├── monitoring/      # Metrics and monitoring
+├── tests/           # Test suite
+└── tools/           # Utility functions
 ```
 
-## Architecture Details
+## Monitoring
 
-### Components
+### Metrics
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
 
-- **Agents**: Specialized AI components with specific roles
-- **Workflows**: Phase-specific graphs defining agent interaction patterns
-- **State Management**: Hierarchical state tracking at global, director, and team levels
-- **MongoDB Integration**: Persistent storage for all system artifacts
-- **Quality Gates**: Criteria that must be met to transition between phases
+Dashboard includes:
+- Agent performance metrics
+- Story creation success rates
+- Processing times
+- Error rates
 
-### Key Features
+### Logging
+- Application logs: `logs/storybook writer..log`
+- Structured JSON format
+- Elasticsearch integration for search
 
-- **Dynamic Team Activation**: Teams are activated based on manuscript needs
-- **Hierarchical Quality Control**: Quality checks at different levels
-- **Enhanced Knowledge Persistence**: Specialized knowledge bases
-- **Adaptive Resource Allocation**: Computation focused on high-impact areas
-- **Human-in-the-Loop Integration**: Strategic placement of human touchpoints
+## API Documentation
+
+Interactive API documentation available at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file for details
+
+## Support
+
+For support:
+1. Check the documentation
+2. Open an issue in the GitHub repository
+3. Contact the development team
+
+## Roadmap
+
+- [ ] Enhanced character interaction modeling
+- [ ] Genre-specific templates
+- [ ] Multi-language support
+- [ ] AI model fine-tuning
+- [ ] Web-based story editor interface
 
