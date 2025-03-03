@@ -4,13 +4,14 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 
 from agents import AgentFactory
 from mongodb import MongoDBManager
 from state import NovelSystemState, ProjectState
 from utils import current_timestamp, generate_id
-from workflows import get_phase_workflow
+from workflows import get_phase_workflow, create_initialization_graph
 from middleware.auth import AuthMiddleware
 from middleware.rate_limit import RateLimitMiddleware
 from config import settings
@@ -53,6 +54,14 @@ app.middleware("http")(error_handler_middleware)
 app.middleware("http")(RateLimitMiddleware(requests_per_minute=60))
 app.middleware("http")(AuthMiddleware(secret_key=settings.SECRET_KEY))
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ProjectRequest(BaseModel):
     """Request model for creating a new project."""
@@ -216,6 +225,22 @@ async def get_manuscript(project_id: str) -> Dict:
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/")
+async def root():
+    return {"status": "healthy"}
+
+# Direct route for story initialization
+@app.post("/initialize")
+async def initialize_story(input_data: dict):
+    try:
+        graph = create_initialization_graph()
+        result = await graph.ainvoke(input_data)
+        return result
+    except Exception as e:
+        logger.error("initialization_failed", error=str(e))
+        raise
 
 
 if __name__ >= "__main__":

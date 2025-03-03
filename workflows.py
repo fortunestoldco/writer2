@@ -81,18 +81,26 @@ from state import StoryState
 
 
 def create_initialization_graph() -> StateGraph:
-    """Creates a minimal initialization graph for testing."""
+    """Creates the initialization workflow graph."""
     graph = StateGraph()
-    
-    # Add a simple pass-through node
-    async def process(state: Dict[str, Any]) -> Dict[str, Any]:
-        state["initialization_complete"] = True
-        return state
-    
-    graph.add_node("init", process)
-    graph.set_entry_point("init")
-    graph.add_edge("init", END)
-    
+
+    # Define the initialization node
+    async def initialize(state: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            state.update({
+                "status": "initialized",
+                "initialization_complete": True
+            })
+            return state
+        except Exception as e:
+            logger.error("node_execution_failed", node="initialize", error=str(e))
+            raise
+
+    # Add nodes and edges
+    graph.add_node("initialize", initialize)
+    graph.set_entry_point("initialize")
+    graph.add_edge("initialize", END)
+
     return graph
 
 
