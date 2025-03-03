@@ -16,19 +16,14 @@ request_duration = meter.create_histogram(
 )
 
 
-async def error_handler_middleware(
-    request: Request, call_next: Callable
-) -> JSONResponse:
+async def error_handler(request: Request, call_next: Callable):
     try:
-        response = await call_next(request)
-        return response
-    except HTTPException as exc:
-        logger.warning("http_exception", status_code=exc.status_code, detail=exc.detail)
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-    except Exception as exc:
-        logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+        return await call_next(request)
+    except Exception as e:
+        logger.error("request_failed", error=str(e))
         return JSONResponse(
-            status_code=500, content={"detail": "Internal server error"}
+            status_code=500,
+            content={"error": str(e)}
         )
 
 

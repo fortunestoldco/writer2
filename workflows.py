@@ -93,13 +93,35 @@ def create_initialization_graph() -> StateGraph:
             })
             return state
         except Exception as e:
-            logger.error("node_execution_failed", node="initialize", error=str(e))
+            logger.error("initialization_failed", error=str(e))
             raise
 
     # Add nodes and edges
     graph.add_node("initialize", initialize)
     graph.set_entry_point("initialize")
     graph.add_edge("initialize", END)
+
+    return graph
+
+
+def create_development_graph() -> StateGraph:
+    """Creates the development workflow graph."""
+    graph = StateGraph()
+    
+    async def develop(state: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            state.update({
+                "status": "developed",
+                "development_complete": True
+            })
+            return state
+        except Exception as e:
+            logger.error("development_failed", error=str(e))
+            raise
+
+    graph.add_node("develop", develop)
+    graph.set_entry_point("develop")
+    graph.add_edge("develop", END)
 
     return graph
 

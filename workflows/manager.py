@@ -71,38 +71,39 @@ class WorkflowManager:
             }
         ]
     
+    def _validate_state(self, state: Dict[str, Any], required_fields: List[str]) -> None:
+        """Validate that required fields are present in state."""
+        missing_fields = [
+            field for field in required_fields 
+            if field not in state
+        ]
+        if missing_fields:
+            raise ValueError(f"Missing required fields: {missing_fields}")
+    
     async def execute_phase(self, phase: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute all agents in a single phase."""
         try:
-            logger.info(f"starting_phase", phase=phase['name'])
-            
-            # Verify required fields
-            missing_fields = [
-                field for field in phase['required_fields']
-                if field not in state
-            ]
-            if missing_fields:
-                raise ValueError(f"Missing required fields: {missing_fields}")
-            
-            # Execute each agent in the phase
             for agent_name in phase['agents']:
-                agent = self.agents[agent_name]
-                state = await agent.invoke(state)
-                
-                logger.info(
-                    "agent_complete",
-                    phase=phase['name'],
-                    agent=agent_name
-                )
-            
-            state['current_phase'] = phase['name']
-            state[f"{phase['name']}_complete"] = True
-            
+                try:
+                    agent = self.agents[agent_name]
+                    state = await agent.invoke(state)
+                    self.logger.info(
+                        "agent_complete",
+                        phase=phase['name'],
+                        agent=agent_name
+                    )
+                except Exception as e:
+                    self.logger.error(
+                        "agent_failed",
+                        phase=phase['name'],
+                        agent=agent_name,
+                        error=str(e)
+                    )
+                    raise
             return state
-            
         except Exception as e:
-            logger.error(
-                "phase_execution_failed",
+            self.logger.error(
+                "phase_failed",
                 phase=phase['name'],
                 error=str(e)
             )

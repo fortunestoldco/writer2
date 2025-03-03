@@ -4,6 +4,7 @@ Configuration for the Novel Writing System.
 
 import os
 from typing import Any, Dict, Optional
+from functools import lru_cache
 
 from dotenv import load_dotenv
 from pydantic import Field
@@ -1092,31 +1093,39 @@ PROMPT_TEMPLATES = {
 
 
 class Settings(BaseSettings):
-    # API Configuration
-    API_VERSION: str = "1.0.0"
-    DEBUG: bool = False
-
     # MongoDB Configuration
-    MONGODB_URI: str = Field(..., env="MONGODB_URI")
-    MONGODB_DB_NAME: str = "writer2"
-
+    MONGODB_URL: str
+    MONGODB_DB: str
+    
     # LangChain Configuration
-    ANTHROPIC_API_KEY: Optional[str] = None
-    OPENAI_API_KEY: Optional[str] = None
-    AWS_ACCESS_KEY_ID: Optional[str] = None
-    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    LANGCHAIN_API_KEY: str
+    DEFAULT_MODEL: str = "claude-3-opus-20240229"
+    
+    # Application Configuration
+    DEBUG: bool = False
+    APP_ENV: str = "development"
+    
+    # Workflow Configuration
+    WORKFLOW_TIMEOUT: int = 600
+    MAX_RETRIES: int = 3
+    
+    def validate(self) -> None:
+        """Validate required configuration."""
+        required = {
+            "MONGODB_URL": self.MONGODB_URL,
+            "MONGODB_DB": self.MONGODB_DB,
+            "LANGCHAIN_API_KEY": self.LANGCHAIN_API_KEY
+        }
+        
+        missing = [k for k, v in required.items() if not v]
+        if missing:
+            raise ValueError(f"Missing required configuration: {', '.join(missing)}")
 
-    # LangGraph Configuration
-    LANGGRAPH_PROJECT: str = "writer2"
-    LANGGRAPH_RUNTIME_MEMORY_LIMIT: str = "4G"
-    LANGGRAPH_RUNTIME_TIMEOUT: int = 600
+    class Config:
+        env_file = ".env"
 
-    # Logging Configuration
-    LOG_LEVEL: str = "INFO"
-
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=True
-    )
-
-
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    settings = Settings()
+    settings.validate()
+    return settings

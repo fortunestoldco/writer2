@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel, Field
 
@@ -23,3 +23,20 @@ class ProjectState(BaseModel):
                 "status": "in_progress",
             }
         }
+
+
+class StoryState(BaseModel):
+    title: str
+    genre: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    current_phase: str
+    initialization_complete: bool = False
+    world_building_complete: bool = False
+    character_development_complete: bool = False
+    plot_development_complete: bool = False
+    scene_creation_complete: bool = False
+    refinement_complete: bool = False
+    final_review_complete: bool = False
+    
+    def validate_phase_completion(self, phase: str) -> bool:
+        return getattr(self, f"{phase}_complete", False)

@@ -3,35 +3,39 @@ import os
 from typing import Any, Dict, List, Optional
 
 import structlog
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo.errors import PyMongoError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import settings
+from config import get_settings
 
 logger = structlog.get_logger(__name__)
 
 
-class MongoDBManager:
+class MongoManager:
     """
     Manager for MongoDB operations.
     """
 
     def __init__(self):
         """Initialize the MongoDB manager."""
-        self.client = AsyncIOMotorClient(settings.MONGODB_URI)
-        self.db = self.client[settings.MONGODB_DB_NAME]
+        self.client: Optional[AsyncIOMotorClient] = None
+        self.db: Optional[AsyncIOMotorDatabase] = None
+        self.settings = get_settings()
 
-    def get_collection(self, collection_name: str) -> Collection:
-        """Get a collection by name.
+    async def connect(self):
+        try:
+            self.client = AsyncIOMotorClient(self.settings.MONGODB_URL)
+            self.db = self.client[self.settings.MONGODB_DB]
+            logger.info("mongodb_connected")
+        except Exception as e:
+            logger.error("mongodb_connection_failed", error=str(e))
+            raise
 
-        Args:
-            collection_name: Name of the collection to get.
-
-        Returns:
-            The requested collection.
-        """
-        return self.db[collection_name]
+    async def get_collection(self, name: str) -> AsyncIOMotorCollection:
+        if not self.db:
+            await self.connect()
+        return self.db[name]
 
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)

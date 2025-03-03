@@ -60,14 +60,6 @@ class StyleEditor(BaseAgent):
                 'style_editing_complete': True
             })
             
-            self.logger.info(
-                "style_editing_complete",
-                overall_score=result['style_metrics']['overall_style_score'],
-                revisions_suggested=len(
-                    result['style_analysis']['prose_quality']['suggested_revisions']
-                )
-            )
-            
             return state
             
         except Exception as e:

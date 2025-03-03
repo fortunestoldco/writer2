@@ -13,6 +13,10 @@ from workflows import (ModelProvider, StoryState, create_creation_graph,
                        create_initialization_graph, create_refinement_graph,
                        create_storybook_workflow)
 
+from fastapi.testclient import TestClient
+from main import app
+
+client = TestClient(app)
 
 @pytest.fixture
 def test_input() -> Dict[str, Any]:
@@ -114,6 +118,23 @@ def test_workflow_graph_structure(config):
     assert "content_development_director" in graphs["creation"].nodes
     assert "editorial_director" in graphs["refinement"].nodes
     assert "market_alignment_director" in graphs["finalization"].nodes
+
+
+def test_initialization_graph():
+    response = client.post(
+        "/graphs/initialization",
+        json={"title": "Test Story", "genre": "mystery"}
+    )
+    assert response.status_code == 200
+    assert response.json()["initialization_complete"] is True
+
+def test_development_graph():
+    response = client.post(
+        "/graphs/development",
+        json={"title": "Test Story", "genre": "mystery"}
+    )
+    assert response.status_code == 200
+    assert response.json()["development_complete"] is True
 
 
 if __name__ == "__main__":

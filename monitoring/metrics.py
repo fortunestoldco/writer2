@@ -1,19 +1,24 @@
 from prometheus_client import Counter, Histogram, Gauge
-from typing import Dict, Any
 import time
 
 # Story metrics
-story_creation_counter = Counter(
-    'story_creations_total',
-    'Total number of stories created',
-    ['status']
+story_phases = Counter(
+    'story_phases_total',
+    'Total number of story phases completed',
+    ['phase', 'status']
 )
 
-story_phase_duration = Histogram(
-    'story_phase_duration_seconds',
-    'Time spent in each story phase',
-    ['phase_name']
+agent_duration = Histogram(
+    'agent_duration_seconds',
+    'Time taken by agents to process',
+    ['agent_type']
 )
 
-active_stories = Gauge(
-    'active_stories',
+class MetricsCollector:
+    @classmethod
+    def track_phase(cls, phase_name: str, status: str):
+        story_phases.labels(phase=phase_name, status=status).inc()
+
+    @classmethod
+    def track_agent_duration(cls, agent_type: str, duration: float):
+        agent_duration.labels(agent_type=agent_type).observe(duration)

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -6,7 +7,7 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-class BaseAgent:
+class BaseAgent(ABC):
     """Base class for all story creation agents."""
     
     def __init__(
@@ -24,6 +25,7 @@ class BaseAgent:
                 ("human", "{input}")
             ])
     
+    @abstractmethod
     async def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Process the current state and return updated state."""
-        raise NotImplementedError
+        pass

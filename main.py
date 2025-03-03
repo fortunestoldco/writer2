@@ -11,7 +11,7 @@ from agents import AgentFactory
 from mongodb import MongoDBManager
 from state import NovelSystemState, ProjectState
 from utils import current_timestamp, generate_id
-from workflows import get_phase_workflow, create_initialization_graph
+from workflows import get_phase_workflow, create_initialization_graph, create_development_graph
 from middleware.auth import AuthMiddleware
 from middleware.rate_limit import RateLimitMiddleware
 from config import settings
@@ -26,6 +26,7 @@ graph_app = LangGraphAPI()
 @app.on_event("startup")
 async def startup_event():
     try:
+        logger.info("application_starting")
         # Initialize LangGraph with explicit configuration
         config: Dict[str, Any] = {
             "initialization": {
@@ -36,7 +37,7 @@ async def startup_event():
         await graph_app.initialize(config)
         logger.info("langgraph_initialized", status="success")
     except Exception as e:
-        logger.error("langgraph_initialization_failed", error=str(e))
+        logger.error("startup_failed", error=str(e))
         raise
 
 app.mount("/graphs", graph_app)
@@ -242,6 +243,32 @@ async def initialize_story(input_data: dict):
         logger.error("initialization_failed", error=str(e))
         raise
 
+# Define available graphs
+AVAILABLE_GRAPHS = {
+    "initialization": create_initialization_graph,
+    "development": create_development_graph
+}
+
+@app.post("/graphs/{graph_name}")
+async def execute_graph(graph_name: str, input_data: dict):
+    if graph_name not in AVAILABLE_GRAPHS:
+        raise ValueError(f"Unknown graph: {graph_name}")
+        
+    graph = AVAILABLE_GRAPHS[graph_name]()
+    result = await graph.ainvoke(input_data)
+    return result
+
+# Initialize workflow manager
+workflow_manager = WorkflowManager(AgentFactory())
+
+@app.post("/story/create")
+async def create_story(request: dict):
+    try:
+        result = await workflow_manager.create_story(request)
+        return result
+    except Exception as e:
+        logger.error("story_creation_failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ >= "__main__":
     import uvicorn

@@ -48,7 +48,7 @@ class CharacterDesigner(BaseAgent):
             input_text = f"""
             Title: {state.get('title')}
             Genre: {state.get('genre')}
-            Creative Vision: {state.get('creative_direction', {})}
+            Creative Direction: {state.get('creative_direction', {})}
             World Building: {state.get('world_building', {})}
             Existing Characters: {state.get('characters', [])}
             """
@@ -57,10 +57,10 @@ class CharacterDesigner(BaseAgent):
             result = await chain.ainvoke({"input": input_text})
             
             state.update({
-                "characters": result["characters"],
-                "character_arcs": result["character_arcs"],
-                "ensemble_dynamics": result["ensemble_dynamics"],
-                "character_development_complete": True
+                'characters': result['characters'],
+                'character_arcs': result['character_arcs'],
+                'ensemble_dynamics': result['ensemble_dynamics'],
+                'character_development_complete': True
             })
             
             self.logger.info(
