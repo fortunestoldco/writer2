@@ -34,6 +34,29 @@ services:
     networks:
       - novel-system-network
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - novel-system-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    networks:
+      - novel-system-network
+    depends_on:
+      - prometheus
+
 networks:
   novel-system-network:
     driver: bridge
@@ -41,4 +64,6 @@ networks:
 volumes:
   mongodb_data:
   prometheus_data:
+  redis_data:
+  grafana_data:
 

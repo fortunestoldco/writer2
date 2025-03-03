@@ -11,8 +11,11 @@ from mongodb import MongoDBManager
 from state import NovelSystemState, ProjectState
 from utils import current_timestamp, generate_id
 from workflows import get_phase_workflow
+from middleware.auth import AuthMiddleware
+from middleware.rate_limit import RateLimitMiddleware
+from config import settings
 
-app = FastAPI(title="NovelSystem Langgraph Server")
+app = FastAPI(title="NovelSystem LangGraph Server")
 
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)
@@ -20,6 +23,12 @@ agent_factory = AgentFactory(mongo_manager)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add middlewares
+app.middleware("http")(telemetry_middleware)
+app.middleware("http")(error_handler_middleware)
+app.middleware("http")(RateLimitMiddleware(requests_per_minute=60))
+app.middleware("http")(AuthMiddleware(secret_key=settings.SECRET_KEY))
 
 
 class ProjectRequest(BaseModel):
