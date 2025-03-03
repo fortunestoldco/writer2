@@ -12,7 +12,11 @@
     },
     "initialization": {
       "module": "workflows",
-      "function": "create_initialization_graph"
+      "function": "create_initialization_graph",
+      "config": {
+        "timeout": 600,
+        "retry_attempts": 3
+      }
     },
     "development": {
       "module": "workflows",

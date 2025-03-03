@@ -23,12 +23,19 @@ app = FastAPI(title="Writer2 API")
 graph_app = LangGraphAPI()
 
 @app.on_event("startup")
-async def startup():
+async def startup_event():
     try:
-        await graph_app.load_graphs()
-        logger.info("langgraph_loaded", status="success")
+        # Initialize LangGraph with explicit configuration
+        config: Dict[str, Any] = {
+            "initialization": {
+                "module": "workflows",
+                "function": "create_initialization_graph"
+            }
+        }
+        await graph_app.initialize(config)
+        logger.info("langgraph_initialized", status="success")
     except Exception as e:
-        logger.error("langgraph_load_failed", error=str(e))
+        logger.error("langgraph_initialization_failed", error=str(e))
         raise
 
 app.mount("/graphs", graph_app)
