@@ -12,7 +12,7 @@ from mongodb import MongoDBManager
 from state import NovelSystemState, ProjectState
 from utils import current_timestamp, generate_id
 from workflows import get_phase_workflow, create_initialization_graph, create_development_graph
-from middleware.auth import AuthMiddleware
+from .middleware.auth import AuthMiddleware
 from middleware.rate_limit import RateLimitMiddleware
 from config import settings
 from langgraph_api import LangGraphAPI

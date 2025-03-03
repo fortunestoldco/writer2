@@ -1,6 +1,7 @@
 from typing import Any, Dict, AsyncGenerator
 
 import pytest
+import structlog
 from fastapi.testclient import TestClient
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -11,6 +12,7 @@ from mongodb import MongoDBManager, MongoManager
 from workflows.manager import WorkflowManager
 from .helpers import get_test_story_state
 
+logger = structlog.get_logger(__name__)
 
 @pytest.fixture
 def test_client() -> TestClient:
@@ -32,7 +34,7 @@ def mongodb_manager():
 
 @pytest.fixture
 def agent_factory() -> AgentFactory:
-    """Fixture for agent factory."""
+    """Agent factory fixture"""
     return AgentFactory()
 
 
@@ -54,4 +56,9 @@ def test_input() -> Dict[str, Any]:
 
 @pytest.fixture
 def test_state() -> Dict[str, Any]:
-    return get_test_story_state()
+    """Basic test state fixture"""
+    return {
+        "title": "Test Story",
+        "genre": "mystery",
+        "length": "novel"
+    }

@@ -1,42 +1,45 @@
-# Novel Writing System with LangGraph
+# Writer2 - AI-Powered Story Creation System
 
-This is a LangGraph-based self-deployed server implementing a comprehensive novel writing system with a hierarchical agent structure.
+A sophisticated system leveraging AI agents to collaboratively create stories through structured workflows.
 
-## System Architecture
+## Overview
 
-The system is structured into strategic and operational levels:
+Writer2 is a microservices-based application that orchestrates multiple specialized AI agents to create stories. Each agent handles specific aspects of the storytelling process, from world-building to character development and prose refinement.
 
-### Strategic Level
-- Executive Director Agent (System Controller)
-  - Human Feedback Integration Manager
-  - Quality Assessment Director
-  - Project Timeline Manager
+## Architecture
 
-### Operational Level
-- Creative Director Agent (with teams for Story Architecture, Character Development, Emotional Engineering)
-- Content Development Director Agent (with teams for Research, Writing, Drafting Coordination)
-- Editorial Director Agent (with teams for Developmental, Line, and Technical Editing)
-- Market Alignment Director Agent (with teams for Cultural Relevance, Reader Experience, Marketing Strategy)
+### Core Components
 
-## System Workflow
+- **Agents**: Specialized AI workers focusing on specific storytelling aspects
+  - ExecutiveDirector: High-level story direction
+  - CreativeDirector: Artistic vision and tone
+  - WorldBuilder: Setting and environment
+  - CharacterDesigner: Character development
+  - PlotArchitect: Story structure
+  - SceneComposer: Scene creation
+  - DialogueWriter: Character conversations
+  - PacingEditor: Story rhythm
+  - ContinuityChecker: Consistency
+  - StyleEditor: Prose quality
+  - QualityAssessor: Final review
 
-The workflow progresses through five major phases:
-1. **Initialization** - Project setup and initial planning
-2. **Development** - Building the foundation of the novel
-3. **Creation** - Writing the actual content
-4. **Refinement** - Editing and polishing the manuscript
-5. **Finalization** - Preparing for publication
+### Technology Stack
 
-## Getting Started
+- **Backend**: FastAPI
+- **AI**: LangChain with Anthropic's Claude
+- **Database**: MongoDB
+- **Monitoring**: Prometheus, Grafana
+- **Tracing**: Jaeger
+- **Logging**: Structlog
 
-### Prerequisites
-- Python 3.10+
-- MongoDB
-- Docker and Docker Compose (optional)
+## Installation
 
-### Installation
+```powershell
+# Clone the repository
+git clone https://github.com/yourusername/writer2.git
+```
 
-#### Using Docker (Recommended)
+### Using Docker (Recommended)
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -46,7 +49,7 @@ cd novel-writing-system
 docker-compose up -d
 ```
 
-#### Manual Setup
+### Manual Setup
 ```bash
 # Clone the repository
 git clone <repository-url>
