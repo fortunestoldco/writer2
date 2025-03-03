@@ -4,6 +4,7 @@ from mongodb import MongoDBManager
 from agents import AgentFactory
 from prometheus_client import Counter
 from contextlib import asynccontextmanager
+from workflows.manager import WorkflowManager
 
 # Tracking metrics
 db_operations = Counter(
@@ -26,3 +27,8 @@ async def get_agent_factory(
 ) -> AgentFactory:
     """Get agent factory with dependency injection"""
     return AgentFactory(mongodb)
+
+async def get_workflow_manager(
+    agent_factory: AgentFactory = Depends(get_agent_factory)
+) -> WorkflowManager:
+    return WorkflowManager(agent_factory)

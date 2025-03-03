@@ -14,8 +14,24 @@ from workflows import get_phase_workflow
 from middleware.auth import AuthMiddleware
 from middleware.rate_limit import RateLimitMiddleware
 from config import settings
+from langgraph_api import LangGraphAPI
+import structlog
 
-app = FastAPI(title="NovelSystem LangGraph Server")
+logger = structlog.get_logger(__name__)
+
+app = FastAPI(title="Writer2 API")
+graph_app = LangGraphAPI()
+
+@app.on_event("startup")
+async def startup():
+    try:
+        await graph_app.load_graphs()
+        logger.info("langgraph_loaded", status="success")
+    except Exception as e:
+        logger.error("langgraph_load_failed", error=str(e))
+        raise
+
+app.mount("/graphs", graph_app)
 
 mongo_manager = MongoDBManager()
 agent_factory = AgentFactory(mongo_manager)

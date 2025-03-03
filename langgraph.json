@@ -10,12 +10,31 @@
         }
       }
     },
-    "initialization": "./workflows.py:create_initialization_graph",
-    "development": "./workflows.py:create_development_graph",
-    "creation": "./workflows.py:create_creation_graph",
-    "refinement": "./workflows.py:create_refinement_graph",
-    "finalization": "./workflows.py:create_finalization_graph"
+    "initialization": {
+      "module": "workflows",
+      "function": "create_initialization_graph"
+    },
+    "development": {
+      "module": "workflows",
+      "function": "create_development_graph"
+    },
+    "creation": {
+      "module": "workflows",
+      "function": "create_creation_graph"
+    },
+    "refinement": {
+      "module": "workflows",
+      "function": "create_refinement_graph"
+    },
+    "finalization": {
+      "module": "workflows",
+      "function": "create_finalization_graph"
+    }
   },
   "dependencies": ["."],
-  "env": ".env"
+  "env": ".env",
+  "runtime": {
+    "memory_limit": "4G",
+    "timeout": 600
+  }
 }
